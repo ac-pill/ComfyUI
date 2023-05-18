@@ -30,6 +30,9 @@ import time
 import comfy.utils
 import comfy.model_management
 
+## Using Requests for Now, replace later with aiohttp
+import requests
+
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
@@ -432,7 +435,6 @@ class PromptServer():
             json_data =  await request.json()
 
             print(f"POST Prompt Received: \n {json_data}") # Remove
-
             if "number" in json_data:
                 number = float(json_data['number'])
             else:
@@ -490,6 +492,7 @@ class PromptServer():
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     ## User ID added on client side if using API ###
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
+                    print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     return web.json_response({"prompt_id": prompt_id, "number": number})
                 else:
                     print("invalid prompt:", valid[1])
