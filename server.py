@@ -33,7 +33,6 @@ import comfy.model_management
 ## Using Requests for Now, replace later with aiohttp
 import requests
 
-
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
 
@@ -465,6 +464,7 @@ class PromptServer():
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
                     outputs_to_execute = valid[2]
+                    self.prompt_id = prompt_id
                     ### User ID added on client side if using API ###
                     user_id = None  
                     channel_id = None
