@@ -13,6 +13,9 @@ import nodes
 
 import comfy.model_management
 
+## Task Status implementation
+task_status_dict = {}
+
 def get_input_data(inputs, class_def, unique_id, outputs={}, prompt={}, extra_data={}):
     valid_inputs = class_def.INPUT_TYPES()
     input_data_all = {}
@@ -254,6 +257,9 @@ class PromptExecutor:
                     to_execute = sorted(list(map(lambda a: (len(recursive_will_execute(prompt, self.outputs, a[-1])), a[-1]), to_execute)))
                     x = to_execute.pop(0)[-1]
 
+                    ## API Status implementation
+                    task_status_dict[prompt_id] = "running"
+
                     recursive_execute(self.server, prompt, self.outputs, x, extra_data, executed, prompt_id, self.outputs_ui)
             except Exception as e:
                 if isinstance(e, comfy.model_management.InterruptProcessingException):
@@ -263,6 +269,9 @@ class PromptExecutor:
                     print(message)
                     if self.server.client_id is not None:
                         self.server.send_sync("execution_error", { "message": message, "prompt_id": prompt_id }, self.server.client_id)
+
+                ## API Status implementation
+                task_status_dict[prompt_id] = "error"
 
                 to_delete = []
                 for o in self.outputs:
@@ -280,6 +289,9 @@ class PromptExecutor:
                 self.server.last_node_id = None
                 if self.server.client_id is not None:
                     self.server.send_sync("executing", { "node": None, "prompt_id": prompt_id }, self.server.client_id)
+                
+                ## API Status implementation
+                task_status_dict[prompt_id] = "finished"
 
         print("Prompt executed in {:.2f} seconds".format(time.perf_counter() - execution_start_time))
         gc.collect()
@@ -389,9 +401,9 @@ def validate_prompt(prompt):
 
     if len(good_outputs) == 0:
         errors_list = "\n".join(set(map(lambda a: "{}".format(a[1]), errors)))
-        return (False, "Prompt has no properly connected outputs\n {}".format(errors_list), list(good_outputs), node_errors)
-
-    return (True, "", list(good_outputs), node_errors)
+        return (False, "Prompt has no properly connected outputs\n {}".format(errors_list))
+    print(list(good_outputs)) ## Output for tracking remove later
+    return (True, "", list(good_outputs))
 
 
 class PromptQueue:

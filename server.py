@@ -7,6 +7,7 @@ import execution
 import uuid
 import json
 import glob
+import jsonify
 from PIL import Image
 from io import BytesIO
 
@@ -22,6 +23,9 @@ except ImportError:
 
 import mimetypes
 from comfy.cli_args import args
+
+## Using Requests for Now, replace later with aiohttp
+import requests
 
 
 @web.middleware
@@ -71,6 +75,8 @@ class PromptServer():
         self.routes = routes
         self.last_node_id = None
         self.client_id = None
+        self.user_prompt_map = {} ## USER ID API REQUEST
+        self.prompt_id = 0 ## hold the prompt id on class level
 
         @routes.get('/ws')
         async def websocket_handler(request):
@@ -299,6 +305,12 @@ class PromptServer():
         @routes.get("/history")
         async def get_history(request):
             return web.json_response(self.prompt_queue.get_history())
+        
+        ## To implement
+        # @routes.get('/task_status')
+        # def get_task_status(request):
+        #     prompt_id = request.args.get('prompt_id')
+        #     return jsonify({ 'status': task_status_dict.get(prompt_id, 'not found') })
 
         @routes.get("/queue")
         async def get_queue(request):
@@ -315,6 +327,8 @@ class PromptServer():
             out_string = ""
             json_data =  await request.json()
 
+            # print(json_data) # to check incoming prompt
+
             if "number" in json_data:
                 number = float(json_data['number'])
             else:
@@ -328,16 +342,40 @@ class PromptServer():
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
                 valid = execution.validate_prompt(prompt)
+                print(f'Valid Prompt: {valid}')
                 extra_data = {}
                 if "extra_data" in json_data:
                     extra_data = json_data["extra_data"]
 
                 if "client_id" in json_data:
                     extra_data["client_id"] = json_data["client_id"]
+                    print(f'Client ID: {extra_data["client_id"]}')
+                else:
+                    extra_data["client_id"] = str(uuid.uuid4().hex)
+                    print(f'Client ID: {extra_data["client_id"]}')
+
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
                     outputs_to_execute = valid[2]
+                    ### User ID added on client side if using API ###
+                    user_id = None  
+                    channel_id = None
+                    server_id = None
+                    port = None
+                    print(f'EXTRA DATA: {extra_data}')
+                    if "user_id" in extra_data:
+                        user_id = extra_data["user_id"]
+                    if "channel_id" in extra_data:
+                        channel_id = extra_data["channel_id"]
+                    if "server_id" in extra_data:
+                        server_id = extra_data["server_id"]
+                    if "port" in extra_data:
+                        port = extra_data["port"]
+                    self.user_prompt_map[prompt_id] = [user_id, channel_id, server_id, port]
+                    print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
+                    ## User ID added on client side if using API ###
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
+                    print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     return web.json_response({"prompt_id": prompt_id})
                 else:
                     print("invalid prompt:", valid[1])
@@ -377,6 +415,15 @@ class PromptServer():
 
             return web.Response(status=200)
         
+    ## Send Executed Image to API
+    def send_message_to_bot(self, message):
+        print("Function send message to BOT")
+        # The address of bot's server
+        response = requests.post('http://0.0.0.0:8080/executed', json=message)
+        if response.status_code != 200:
+            print(f'Failed to send message to bot: {response.content}')
+
+        
     def add_routes(self):
         self.app.add_routes(self.routes)
         self.app.add_routes([
@@ -403,6 +450,34 @@ class PromptServer():
             await self.sockets[sid].send_str(message)
 
     def send_sync(self, event, data, sid=None):
+        # Check if the event is 'executed' (i.e., a node has been executed)
+        print(event)
+        print(data)
+        if event == 'executed':# or data['value'] == data['max']:
+            # Extract the filenames from the data
+            filenames = []
+            if 'output' in data and 'images' in data['output']:
+                for image in data['output']['images']:
+                    if 'filename' in image:
+                        filenames.append(image['filename'])
+            # Include the filenames in the data
+            data['filenames'] = filenames
+            print(f'data: {data}')
+            print(f'filenames: {data["filenames"]}')
+            print(f'prompt_id: {self.prompt_id}')
+            prompt_id = self.prompt_id
+            # Send message to bot
+            bot_message = {
+                "prompt_id": data['prompt_id'],
+                "user_id": self.user_prompt_map[prompt_id][0],
+                "channel_id": self.user_prompt_map[prompt_id][1],
+                "filenames": data['filenames']
+            }
+            print(f'BOT MESSAGE: {bot_message}')
+
+            # This could be a POST request, a WebSocket message, etc.
+            self.send_message_to_bot(bot_message)
+
         self.loop.call_soon_threadsafe(
             self.messages.put_nowait, (event, data, sid))
 
