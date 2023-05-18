@@ -430,7 +430,7 @@ class PromptServer():
     def send_sync(self, event, data, sid=None):
         # Check if the event is 'executed' (i.e., a node has been executed)
         print(event)
-        print(data)
+        print(f'Prompt DATA: {data}')
         if event == 'executed':# or data['value'] == data['max']:
             # Extract the filenames from the data
             filenames = []
