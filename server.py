@@ -373,9 +373,9 @@ class PromptServer():
                         port = extra_data["port"]
                     self.user_prompt_map[prompt_id] = [user_id, channel_id, server_id, port]
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
+                    print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     ## User ID added on client side if using API ###
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
-                    print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     return web.json_response({"prompt_id": prompt_id})
                 else:
                     print("invalid prompt:", valid[1])
