@@ -402,7 +402,12 @@ def validate_prompt(prompt):
     if len(good_outputs) == 0:
         errors_list = "\n".join(set(map(lambda a: "{}".format(a[1]), errors)))
         return (False, "Prompt has no properly connected outputs\n {}".format(errors_list))
+<<<<<<< HEAD
     print(list(good_outputs)) ## Output for tracking remove later
+=======
+    print(list(good_outputs))
+    
+>>>>>>> master
     return (True, "", list(good_outputs))
 
 
