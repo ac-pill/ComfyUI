@@ -24,7 +24,7 @@ except ImportError:
 import mimetypes
 from comfy.cli_args import args
 
-## Fucking requests to send fucking posts
+## Using Requests Temporarily, remove to use aiohttp
 import requests
 
 
