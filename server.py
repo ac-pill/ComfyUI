@@ -24,11 +24,7 @@ except ImportError:
 import mimetypes
 from comfy.cli_args import args
 
-<<<<<<< HEAD
-## Using Requests for Now, replace later with aiohttp
-=======
 ## Using Requests Temporarily, remove to use aiohttp
->>>>>>> master
 import requests
 
 
@@ -360,25 +356,20 @@ class PromptServer():
 
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
-<<<<<<< HEAD
                     outputs_to_execute = valid[2]
                     ### User ID added on client side if using API ###
                     user_id = None  
                     channel_id = None
                     server_id = None
                     port = None
-=======
                     self.prompt_id = prompt_id
-                    ### User ID added on client side if using API ###
                     user_id = None  
                     channel_id = None
->>>>>>> master
                     print(f'EXTRA DATA: {extra_data}')
                     if "user_id" in extra_data:
                         user_id = extra_data["user_id"]
                     if "channel_id" in extra_data:
                         channel_id = extra_data["channel_id"]
-<<<<<<< HEAD
                     if "server_id" in extra_data:
                         server_id = extra_data["server_id"]
                     if "port" in extra_data:
@@ -388,13 +379,6 @@ class PromptServer():
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     ## User ID added on client side if using API ###
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
-=======
-                    self.user_prompt_map[prompt_id] = [user_id, channel_id]
-                    print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
-                    ##
-                    self.prompt_queue.put((number, prompt_id, prompt, extra_data, valid[2]))
-                    print(f"Added to queue: {number, prompt_id, prompt, extra_data, valid[2]}")
->>>>>>> master
                     return web.json_response({"prompt_id": prompt_id})
                 else:
                     print("invalid prompt:", valid[1])
