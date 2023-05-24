@@ -422,16 +422,17 @@ class PromptServer():
     def send_message_to_bot(self, message):
         print("Function send message to BOT")
         # The address of bot's server
-        server_id = self.user_prompt_map[self.prompt_id]["server_id"]
-        port = self.user_prompt_map[self.prompt_id]["port"]
-        response = requests.post('{server_id}:{port}/executed', json=message)
-        if response.status_code != 200:
-            print(f'Failed to send message to bot: {response.content}')
-            # Add log
-            # Add Stop
-        else:
-            # Add Stop
-            pass
+        if (self.user_prompt_map[self.prompt_id]["server_id"] != None):
+            server_id = self.user_prompt_map[self.prompt_id]["server_id"]
+            port = self.user_prompt_map[self.prompt_id]["port"]
+            response = requests.post('{server_id}:{port}/executed', json=message)
+            if response.status_code != 200:
+                print(f'Failed to send message to bot: {response.content}')
+                # Add log
+                # Add Stop
+            else:
+                # Add Stop
+                pass
 
         
     def add_routes(self):
