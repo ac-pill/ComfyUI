@@ -374,7 +374,12 @@ class PromptServer():
                         server_id = extra_data["server_id"]
                     if "port" in extra_data:
                         port = extra_data["port"]
-                    self.user_prompt_map[prompt_id] = [user_id, channel_id, server_id, port]
+                    self.user_prompt_map[prompt_id] = {
+                            "user_id": user_id,
+                            "channel_id": channel_id,
+                            "server_id": server_id,
+                            "port": port,
+                        }
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     ## User ID added on client side if using API ###
@@ -425,7 +430,7 @@ class PromptServer():
         if (self.user_prompt_map[self.prompt_id]["server_id"] != None):
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
-            response = requests.post('{server_id}:{port}/executed', json=message)
+            response = requests.post(f'{server_id}:{port}/executed', json=message)
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
                 # Add log
@@ -480,8 +485,8 @@ class PromptServer():
             # Send message to bot
             bot_message = {
                 "prompt_id": data['prompt_id'],
-                "user_id": self.user_prompt_map[prompt_id][0],
-                "channel_id": self.user_prompt_map[prompt_id][1],
+                "user_id": self.user_prompt_map[prompt_id]["user_id"],
+                "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
                 "filenames": data['filenames']
             }
             print(f'BOT MESSAGE: {bot_message}')
