@@ -430,7 +430,7 @@ class PromptServer():
         if (self.user_prompt_map[self.prompt_id]["server_id"] != None):
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
-            response = requests.post(f'{server_id}:{port}/executed', json=message)
+            response = requests.post(f'{server_id}{port}/executed', json=message)
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
                 # Add log
