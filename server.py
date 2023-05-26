@@ -527,6 +527,11 @@ class PromptServer():
             "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
             "filenames": self.prompt_filenames_map[prompt_id]  # This will send all filenames associated with the prompt_id so far
         }
+        if event == 'executed':
+            print(f'BOT MESSAGE: {bot_message}')
+            # This could be a POST request, a WebSocket message, etc.
+            self.send_message_to_bot(bot_message)
+
 
         self.loop.call_soon_threadsafe(
             self.messages.put_nowait, (event, data, sid))
