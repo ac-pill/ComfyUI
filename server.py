@@ -530,7 +530,6 @@ class PromptServer():
             print(f'BOT MESSAGE: {bot_message}')
             # This could be a POST request or Webhook
             self.send_message_to_bot(bot_message)
- 
         ## Edit on Original send_sync
 
         self.loop.call_soon_threadsafe(
