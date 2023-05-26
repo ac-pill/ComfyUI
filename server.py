@@ -500,38 +500,39 @@ class PromptServer():
             await self.sockets[sid].send_str(message)
 
     def send_sync(self, event, data, sid=None):
-        # Check if the event is 'executed' (i.e., a node has been executed)
+        ## Edit on original send_sync
         print(event)
         print(f'Prompt DATA: {data}')
-        # Extract the filenames from the data
-        filenames = []
-        if 'output' in data and 'images' in data['output']:
-            for image in data['output']['images']:
-                if 'filename' in image:
-                    filenames.append(image['filename'])
-        
-        # Get the prompt_id
-        prompt_id = self.prompt_id
-        
-        # Initialize the list for this prompt_id if it doesn't already exist
-        if prompt_id not in self.prompt_filenames_map:
-            self.prompt_filenames_map[prompt_id] = []
-
-        # Append the new filenames to the list in the dictionary
-        self.prompt_filenames_map[prompt_id].extend(filenames)
-
-        # Now when sending the message to the bot, use the accumulated filenames
-        bot_message = {
-            "prompt_id": prompt_id,
-            "user_id": self.user_prompt_map[prompt_id]["user_id"],
-            "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
-            "filenames": self.prompt_filenames_map[prompt_id]  # This will send all filenames associated with the prompt_id so far
-        }
+        # Check if the event is 'executed' (i.e., a node has been executed)
         if event == 'executed':
+            # Extract the filenames from the data
+            filenames = []
+            if 'output' in data and 'images' in data['output']:
+                for image in data['output']['images']:
+                    if 'filename' in image:
+                        filenames.append(image['filename'])
+            
+            # Get the prompt_id
+            prompt_id = self.prompt_id
+            
+            # Initialize the list for this prompt_id if it doesn't already exist
+            if prompt_id not in self.prompt_filenames_map:
+                self.prompt_filenames_map[prompt_id] = []
+
+            # Append the new filenames to the list in the dictionary
+            self.prompt_filenames_map[prompt_id].extend(filenames)
+
+            # Now when sending the message to the bot, use the accumulated filenames
+            bot_message = {
+                "prompt_id": prompt_id,
+                "user_id": self.user_prompt_map[prompt_id]["user_id"],
+                "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
+                "filenames": self.prompt_filenames_map[prompt_id]  # This will send all filenames associated with the prompt_id so far
+            }
             print(f'BOT MESSAGE: {bot_message}')
             # This could be a POST request, a WebSocket message, etc.
             self.send_message_to_bot(bot_message)
-
+        ## Edit on Original send_sync
 
         self.loop.call_soon_threadsafe(
             self.messages.put_nowait, (event, data, sid))
