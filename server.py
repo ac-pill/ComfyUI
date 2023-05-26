@@ -462,7 +462,7 @@ class PromptServer():
                 print(f"Could not delete file {file_path}. Reason: {e}")
 
     ## Delete All Input Files
-    def delete_all_input_files():
+    def delete_all_input_files(self):
         input_directory = folder_paths.get_input_directory()
         for filename in os.listdir(input_directory):
             file_path = os.path.join(input_directory, filename)
