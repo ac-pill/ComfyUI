@@ -423,7 +423,15 @@ class PromptServer():
                     self.prompt_queue.delete_history_item(id_to_delete)
 
             return web.Response(status=200)
-        
+
+        ## Delete Images from Server
+        @routes.post("/delete")
+        async def post_delete(request):
+            data = request.json
+            if 'filenames' in data:
+                self.delete_images(data['filenames'])
+            return '', 200
+       
     ## Send Executed Image to API
     def send_message_to_bot(self, message):
         print("Function send message to BOT")
@@ -435,13 +443,37 @@ class PromptServer():
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
                 # Add log
-                # Clean up - delete input file and output file
                 # Add Stop
             else:
+                # Add log
                 # Add Stop
-                pass
+                # Delete all input files
+                self.delete_all_input_files()
+    
+    ## Delete Images from Server
+    def delete_images(filenames: list):
+        output_directory = folder_paths.get_output_directory()
+        for filename in filenames:
+            file_path = os.path.join(output_directory, filename)
+            try:
+                os.remove(file_path)
+                print(f"Deleted file: {file_path}")
+            except Exception as e:
+                print(f"Could not delete file {file_path}. Reason: {e}")
 
-        
+    ## Delete All Input Files
+    def delete_all_input_files():
+        input_directory = folder_paths.get_input_directory()
+        for filename in os.listdir(input_directory):
+            file_path = os.path.join(input_directory, filename)
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                    print(f"Deleted file: {file_path}")
+            except Exception as e:
+                print(f"Could not delete file {file_path}. Reason: {e}")
+
+
     def add_routes(self):
         self.app.add_routes(self.routes)
         self.app.add_routes([
