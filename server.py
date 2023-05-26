@@ -511,7 +511,7 @@ class PromptServer():
                     filenames.append(image['filename'])
         
         # Get the prompt_id
-        prompt_id = data['prompt_id']
+        prompt_id = self.prompt_id
         
         # Initialize the list for this prompt_id if it doesn't already exist
         if prompt_id not in self.prompt_filenames_map:
