@@ -77,6 +77,7 @@ class PromptServer():
         self.client_id = None
         self.user_prompt_map = {} ## USER ID API REQUEST
         self.prompt_id = 0 ## hold the prompt id on class level
+        self.prompt_filenames_map = {} ## Hold the filename outputs
 
         @routes.get('/ws')
         async def websocket_handler(request):
@@ -434,6 +435,7 @@ class PromptServer():
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
                 # Add log
+                # Clean up - delete input file and output file
                 # Add Stop
             else:
                 # Add Stop
@@ -469,30 +471,30 @@ class PromptServer():
         # Check if the event is 'executed' (i.e., a node has been executed)
         print(event)
         print(f'Prompt DATA: {data}')
-        if event == 'executed':# or data['value'] == data['max']:
-            # Extract the filenames from the data
-            filenames = []
-            if 'output' in data and 'images' in data['output']:
-                for image in data['output']['images']:
-                    if 'filename' in image:
-                        filenames.append(image['filename'])
-            # Include the filenames in the data
-            data['filenames'] = filenames
-            print(f'data: {data}')
-            print(f'filenames: {data["filenames"]}')
-            print(f'prompt_id: {self.prompt_id}')
-            prompt_id = self.prompt_id
-            # Send message to bot
-            bot_message = {
-                "prompt_id": data['prompt_id'],
-                "user_id": self.user_prompt_map[prompt_id]["user_id"],
-                "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
-                "filenames": data['filenames']
-            }
-            print(f'BOT MESSAGE: {bot_message}')
+        # Extract the filenames from the data
+        filenames = []
+        if 'output' in data and 'images' in data['output']:
+            for image in data['output']['images']:
+                if 'filename' in image:
+                    filenames.append(image['filename'])
+        
+        # Get the prompt_id
+        prompt_id = data['prompt_id']
+        
+        # Initialize the list for this prompt_id if it doesn't already exist
+        if prompt_id not in self.prompt_filenames_map:
+            self.prompt_filenames_map[prompt_id] = []
 
-            # This could be a POST request, a WebSocket message, etc.
-            self.send_message_to_bot(bot_message)
+        # Append the new filenames to the list in the dictionary
+        self.prompt_filenames_map[prompt_id].extend(filenames)
+
+        # Now when sending the message to the bot, use the accumulated filenames
+        bot_message = {
+            "prompt_id": prompt_id,
+            "user_id": self.user_prompt_map[prompt_id]["user_id"],
+            "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
+            "filenames": self.prompt_filenames_map[prompt_id]  # This will send all filenames associated with the prompt_id so far
+        }
 
         self.loop.call_soon_threadsafe(
             self.messages.put_nowait, (event, data, sid))
