@@ -427,10 +427,10 @@ class PromptServer():
         ## Delete Images from Server
         @routes.post("/delete")
         async def post_delete(request):
-            data = request.json
+            data = await request.json()
             if 'filenames' in data:
                 self.delete_images(data['filenames'])
-            return '', 200
+            return web.Response(status=200)
        
     ## Send Executed Image to API
     def send_message_to_bot(self, message):
