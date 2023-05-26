@@ -426,7 +426,7 @@ class PromptServer():
 
         ## Delete Images from Server
         @routes.post("/delete")
-        async def post_delete(request):
+        async def post_delete(self, request):
             data = await request.json()
             print(f'DELETE DATA:{data}')
             if 'filenames' in data:
@@ -453,7 +453,7 @@ class PromptServer():
 
     
     ## Delete Images from Server
-    def delete_images(filenames: list):
+    def delete_images(self, filenames: list):
         output_directory = folder_paths.get_output_directory()
         for filename in filenames:
             file_path = os.path.join(output_directory, filename)
