@@ -426,7 +426,7 @@ class PromptServer():
 
         ## Delete Images from Server
         @routes.post("/delete")
-        async def post_delete(self, request):
+        async def post_delete(request):
             data = await request.json()
             print(f'DELETE DATA:{data}')
             if 'filenames' in data:
