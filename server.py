@@ -26,7 +26,11 @@ from comfy.cli_args import args
 
 ## Using Requests Temporarily, remove to use aiohttp
 import requests
-
+try:
+    import handler
+    HANDLER_IMPORTED = True
+except ImportError:
+    HANDLER_IMPORTED = False
 
 @web.middleware
 async def cache_control(request: web.Request, handler):
@@ -432,6 +436,17 @@ class PromptServer():
             if 'filenames' in data:
                 self.delete_images(data['filenames'])
             return web.Response(status=200)
+        
+        ## Shutdown Server
+        @routes.get('/shutdown')
+        async def shutdown(request):
+            if HANDLER_IMPORTED:
+                # Add the shutdown command to the command queue.
+                handler.command_queue.put('shutdown')
+            else:
+                # Handler was not imported, so we cannot shut down.
+                print("Cannot shutdown because handler was not imported.")
+            return web.Response()
        
     ## Send Executed Image to API
     def send_message_to_bot(self, message):
