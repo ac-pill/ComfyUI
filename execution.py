@@ -174,7 +174,7 @@ def recursive_execute(server, prompt, outputs, current_item, extra_data, execute
 
         error_details = {
             "node_id": unique_id,
-            "message": str(ex),
+            "exception_message": str(ex),
             "exception_type": exception_type,
             "traceback": traceback.format_tb(tb),
             "current_inputs": input_data_formatted,
@@ -285,7 +285,7 @@ class PromptExecutor:
                     "node_type": class_type,
                     "executed": list(executed),
 
-                    "message": error["message"],
+                    "exception_message": error["exception_message"],
                     "exception_type": error["exception_type"],
                     "traceback": error["traceback"],
                     "current_inputs": error["current_inputs"],
