@@ -540,7 +540,6 @@ class PromptServer():
             if 'filenames' in data:
                 self.delete_images(data['filenames'])
             return web.Response(status=200)
-
     ## Shutdown Server
     def shutdown(self, message=None):
         # Check if the pipe exists
