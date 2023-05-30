@@ -123,6 +123,8 @@ def load_extra_path_config(yaml_path):
 def main_func(args):
     import argparse
 
+    print("Starting Server")
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--listen", type=str, default='')
     parser.add_argument("--port", type=int, default=8188)
