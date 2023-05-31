@@ -90,7 +90,7 @@ def main_func(args, is_server_ready):
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    server = server.PromptServer(loop)
+    prompt_server = server.PromptServer(loop)
     q = execution.PromptQueue(server)
 
     extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
@@ -102,10 +102,10 @@ def main_func(args, is_server_ready):
             load_extra_path_config(config_path)
 
     init_custom_nodes()
-    server.add_routes()
-    hijack_progress(server)
+    prompt_server.add_routes()
+    hijack_progress(prompt_server)
 
-    threading.Thread(target=prompt_worker, daemon=True, args=(q,server,)).start()
+    threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start()
 
     if args.output_directory:
         output_dir = os.path.abspath(args.output_directory)
@@ -124,11 +124,11 @@ def main_func(args, is_server_ready):
 
     if os.name == "nt":
         try:
-            loop.run_until_complete(run(server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
+            loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
         except KeyboardInterrupt:
             pass
     else:
-        loop.run_until_complete(run(server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
+        loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
 
     cleanup_temp()
 
