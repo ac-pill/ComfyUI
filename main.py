@@ -129,6 +129,10 @@ def main_func(args_dict, child_conn):
     print("Starting Server")
     print(f'Args from shared.py:{args_dict}')
     args = init_args(args_dict)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    prompt_server = server.PromptServer(loop)
+    q = execution.PromptQueue(server)
 
     print(f'DONT UPCAST: {args.dont_upcast_attention}')
 
@@ -140,11 +144,16 @@ def main_func(args_dict, child_conn):
     if args.dont_upcast_attention:
         print("disabling upcasting of attention")
         os.environ['ATTN_PRECISION'] = "fp16"
+    
+    init_custom_nodes()
+    prompt_server.add_routes()
+    hijack_progress(prompt_server)
 
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         print("Set cuda device to:", args.cuda_device)
-    threading.Thread(target=prompt_worker, daemon=True, args=(q, server,)).start()
+    
+    threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start()
 
     print(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
 
