@@ -73,7 +73,7 @@ def load_extra_path_config(yaml_path):
                 print("Adding extra search path", x, full_path)
                 folder_paths.add_model_folder_path(x, full_path)
 
-def main_func(args):
+def main_func(args, is_server_ready):
     import argparse
 
     print("Starting Server")
@@ -131,6 +131,9 @@ def main_func(args):
         loop.run_until_complete(run(server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
 
     cleanup_temp()
+
+    # After server is ready
+    is_server_ready.value = True
 
 if __name__ == "__main__":
     main_func(sys.argv[1:])
