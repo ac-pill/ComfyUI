@@ -73,53 +73,6 @@ def load_extra_path_config(yaml_path):
                 print("Adding extra search path", x, full_path)
                 folder_paths.add_model_folder_path(x, full_path)
 
-# if __name__ == "__main__":
-#     cleanup_temp()
-
-#     loop = asyncio.new_event_loop()
-#     asyncio.set_event_loop(loop)
-#     server = server.PromptServer(loop)
-#     q = execution.PromptQueue(server)
-
-#     extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
-#     if os.path.isfile(extra_model_paths_config_path):
-#         load_extra_path_config(extra_model_paths_config_path)
-
-#     if args.extra_model_paths_config:
-#         for config_path in itertools.chain(*args.extra_model_paths_config):
-#             load_extra_path_config(config_path)
-
-#     init_custom_nodes()
-#     server.add_routes()
-#     hijack_progress(server)
-
-#     threading.Thread(target=prompt_worker, daemon=True, args=(q,server,)).start()
-
-#     if args.output_directory:
-#         output_dir = os.path.abspath(args.output_directory)
-#         print(f"Setting output directory to: {output_dir}")
-#         folder_paths.set_output_directory(output_dir)
-
-#     if args.quick_test_for_ci:
-#         exit(0)
-
-#     call_on_start = None
-#     if args.auto_launch:
-#         def startup_server(address, port):
-#             import webbrowser
-#             webbrowser.open("http://{}:{}".format(address, port))
-#         call_on_start = startup_server
-
-#     if os.name == "nt":
-#         try:
-#             loop.run_until_complete(run(server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
-#         except KeyboardInterrupt:
-#             pass
-#     else:
-#         loop.run_until_complete(run(server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
-
-#     cleanup_temp()
-
 def main_func(args):
     import argparse
 
