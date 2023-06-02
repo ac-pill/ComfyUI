@@ -31,6 +31,8 @@ import folder_paths
 import server
 from nodes import init_custom_nodes
 
+print("LOADING MAIN.PY - V02")
+
 
 def prompt_worker(q, server):
     e = execution.PromptExecutor(server)
