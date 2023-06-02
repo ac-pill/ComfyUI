@@ -26,11 +26,6 @@ from comfy.cli_args import args
 
 ## Using Requests Temporarily, remove to use aiohttp
 import requests
-try:
-    import shared
-    SHARED_IMPORTED = True
-except ImportError:
-    SHARED_IMPORTED = False
 
 @web.middleware
 async def cache_control(request: web.Request, handler):
@@ -57,7 +52,7 @@ def create_cors_middleware(allowed_origin: str):
     return cors_middleware
 
 class PromptServer():
-    def __init__(self, loop):
+    def __init__(self, loop, pipe=None):
         PromptServer.instance = self
 
         mimetypes.init(); 
@@ -82,6 +77,7 @@ class PromptServer():
         self.user_prompt_map = {} ## USER ID API REQUEST
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
+        self.pipe = pipe
 
         @routes.get('/ws')
         async def websocket_handler(request):
@@ -440,12 +436,12 @@ class PromptServer():
         ## Shutdown Server
         @routes.get('/shutdown')
         async def shutdown(request):
-            if SHARED_IMPORTED:
-                # Add the shutdown command to the command queue.
-                shared.command_queue.put('shutdown')
+            # Check if the pipe exists
+            if self.pipe:
+                # Send the 'shutdown' command through the pipe
+                self.pipe.send('shutdown')
             else:
-                # Handler was not imported, so we cannot shut down.
-                print("Cannot shutdown because handler was not imported.")
+                print("Cannot shutdown because the pipe is not connected.")
             return web.Response()
        
     ## Send Executed Image to API
