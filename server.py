@@ -407,7 +407,7 @@ class PromptServer():
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     ## User ID added on client side if using API ###
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
-                    return web.json_response({"prompt_id": prompt_id})
+                    return web.json_response({"prompt_id": prompt_id, "number": number})
                 else:
                     print("invalid prompt:", valid[1])
                     return web.json_response({"error": valid[1], "node_errors": valid[3]}, status=400)
