@@ -77,7 +77,7 @@ def load_extra_path_config(yaml_path):
                 print("Adding extra search path", x, full_path)
                 folder_paths.add_model_folder_path(x, full_path)
 
-def main_func(args, is_server_ready):
+def main_func(args, is_server_ready, child_conn):
     import argparse
 
     print("Starting Server")
