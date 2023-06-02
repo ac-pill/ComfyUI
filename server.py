@@ -455,10 +455,8 @@ class PromptServer():
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
                 # Add log
-                # Add Stop
             else:
                 # Add log
-                # Add Stop
                 # Delete all input files
                 self.delete_all_input_files()
 

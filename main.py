@@ -94,7 +94,7 @@ def main_func(args, is_server_ready):
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    prompt_server = server.PromptServer(loop, parent_conn) # Changing here for adding pipe communication
+    prompt_server = server.PromptServer(loop, child_conn) # Changing here for adding pipe communication
     q = execution.PromptQueue(server)
 
     extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
