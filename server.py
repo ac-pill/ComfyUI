@@ -94,8 +94,7 @@ class PromptServer():
         self.user_prompt_map = {} ## To store USER related info
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
-        self.pipe = pipe ## Hold Server state for Parent Process
-
+        self.pipe = pipe
         @routes.get('/ws')
         async def websocket_handler(request):
             ws = web.WebSocketResponse()
@@ -540,6 +539,7 @@ class PromptServer():
             if 'filenames' in data:
                 self.delete_images(data['filenames'])
             return web.Response(status=200)
+        
     ## Shutdown Server
     def shutdown(self, message=None):
         # Check if the pipe exists
