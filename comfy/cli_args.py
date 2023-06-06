@@ -33,6 +33,7 @@ class EnumAction(argparse.Action):
         setattr(namespace, self.dest, value)
 
 class LatentPreviewMethod(enum.Enum):
+    NoPreviews = "none"
     Auto = "auto"
     Latent2RGB = "latent2rgb"
     TAESD = "taesd"
@@ -62,8 +63,7 @@ def parse_args(arg_dict=None):
     parser.add_argument("--force-fp32", action="store_true", help="Force fp32 (If this makes your GPU work better please report it).")
     parser.add_argument("--directml", type=int, nargs="?", metavar="DIRECTML_DEVICE", const=-1, help="Use torch-directml.")
 
-    parser.add_argument("--disable-previews", action="store_true", help="Disable showing node previews.")
-    parser.add_argument("--default-preview-method", type=str, default=LatentPreviewMethod.Auto, metavar="PREVIEW_METHOD", help="Default preview method for sampler nodes.")
+    parser.add_argument("--preview-method", type=LatentPreviewMethod, default=LatentPreviewMethod.NoPreviews, help="Default preview method for sampler nodes.", action=EnumAction)
 
     attn_group = parser.add_mutually_exclusive_group()
     attn_group.add_argument("--use-split-cross-attention", action="store_true", help="Use the split cross attention optimization instead of the sub-quadratic one. Ignored when xformers is used.")
