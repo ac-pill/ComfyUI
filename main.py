@@ -88,6 +88,8 @@ def main_func(args, is_server_ready, child_conn):
     parser.add_argument("--dont_print_server", action='store_true')
     parser.add_argument("--auto_launch", action='store_true')
     parser.add_argument("--extra_model_paths_config", nargs="*", action='append', default=[])
+    parser.add_argument("--output_directory", type=str, help="Directory for output")
+    parser.add_argument("--quick_test_for_ci", action='store_true', help="Quick test for CI")
     # ... add other command-line arguments that your script needs ...
     args = parser.parse_args(args)
 
