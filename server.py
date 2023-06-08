@@ -77,7 +77,7 @@ class PromptServer():
         self.user_prompt_map = {} ## USER ID API REQUEST
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
-        self.pipe = pipe
+        self.pipe = pipe ## Hold Server state for Parent Process
 
         @routes.get('/ws')
         async def websocket_handler(request):
