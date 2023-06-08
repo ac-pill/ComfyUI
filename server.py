@@ -22,7 +22,7 @@ except ImportError:
     sys.exit()
 
 import mimetypes
-from comfy.cli_args import args
+# from comfy.cli_args import args
 
 ## Using Requests Temporarily, remove to use aiohttp
 import requests
@@ -52,7 +52,7 @@ def create_cors_middleware(allowed_origin: str):
     return cors_middleware
 
 class PromptServer():
-    def __init__(self, loop, pipe=None):
+    def __init__(self, loop, args, pipe=None):
         PromptServer.instance = self
 
         mimetypes.init(); 
@@ -62,9 +62,11 @@ class PromptServer():
         self.messages = asyncio.Queue()
         self.number = 0
 
+        self.args = args ## Get the args from Main
+
         middlewares = [cache_control]
-        if args.enable_cors_header:
-            middlewares.append(create_cors_middleware(args.enable_cors_header))
+        if self.args.enable_cors_header:
+            middlewares.append(create_cors_middleware(self.args.enable_cors_header))
 
         self.app = web.Application(client_max_size=20971520, middlewares=middlewares)
         self.sockets = dict()
