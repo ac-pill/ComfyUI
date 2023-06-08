@@ -1,9 +1,10 @@
 import psutil
 from enum import Enum
-from comfy.cli_args import args
+from comfy.cli_args import get_args # Change to function
+args = get_args()
 import torch
 
-print(args) # remove this
+print(f'Arguments in model_management:{args}')
 
 class VRAMState(Enum):
     DISABLED = 0    #No vram present: no need to move models to vram
