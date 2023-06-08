@@ -55,3 +55,7 @@ def set_args(arg_dict):
 def get_args():
     global args
     return args
+
+if __name__ == '__main__':
+    # this will ensure args is always initialized with some defaults
+    parse_args()
