@@ -21,7 +21,9 @@ if model_management.xformers_enabled():
 import os
 _ATTN_PRECISION = os.environ.get("ATTN_PRECISION", "fp32")
 
-from comfy.cli_args import args
+from comfy.cli_args import get_args
+args = get_args()
+print(args)
 
 def exists(val):
     return val is not None

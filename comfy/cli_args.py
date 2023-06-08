@@ -51,3 +51,7 @@ def parse_args(arg_dict=None):
 def set_args(arg_dict):
     global args
     args = parse_args(arg_dict)
+
+def get_args():
+    global args
+    return args
