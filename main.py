@@ -45,7 +45,7 @@ def prompt_worker(q, server):
         gc.collect()
         comfy.model_management.soft_empty_cache()
 
-async def run(server, address='', port=8188, verbose=True, call_on_start=None):
+async def run(server, address='localhost', port=3000, verbose=True, call_on_start=None):
     await asyncio.gather(server.start(address, port, verbose, call_on_start), server.publish_loop())
 
 
@@ -136,7 +136,8 @@ def main_func(args_dict, child_conn):
         except KeyboardInterrupt:
             pass
     else:
-        loop.run_until_complete(run(server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
+        loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
+        print("Server is listening on port 3000")
 
     cleanup_temp()
 
