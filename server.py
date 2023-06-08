@@ -22,11 +22,7 @@ except ImportError:
     sys.exit()
 
 import mimetypes
-# from comfy.cli_args import args
-
-## Using Requests Temporarily, remove to use aiohttp
-import requests
-import time
+from comfy.cli_args import args
 import comfy.utils
 import comfy.model_management
 
@@ -67,7 +63,7 @@ def create_cors_middleware(allowed_origin: str):
     return cors_middleware
 
 class PromptServer():
-    def __init__(self, loop, args, pipe=None): ## Get the args back to top as comfy.cli_args
+    def __init__(self, loop, pipe=None):
         PromptServer.instance = self
 
         mimetypes.init()

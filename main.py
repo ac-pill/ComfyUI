@@ -118,7 +118,10 @@ def main_func(args_dict, child_conn):
     
     threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start()
 
-    print(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    prompt_server = server.PromptServer(loop, child_conn) # Changing here for adding pipe communication
+    q = execution.PromptQueue(server)
 
     print("Starting asyncio event loop")
 
