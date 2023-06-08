@@ -43,7 +43,7 @@ def prompt_worker(q, server):
         e.execute(item[2], item[1], item[3], item[4])
         q.task_done(item_id, e.outputs_ui)
 
-async def run(server, address='', port=8188, verbose=True, call_on_start=None):
+async def run(server, address='localhost', port=3000, verbose=True, call_on_start=None):
     await asyncio.gather(server.start(address, port, verbose, call_on_start), server.publish_loop())
 
 def hijack_progress(server):
@@ -136,6 +136,7 @@ def main_func(args, is_server_ready, child_conn):
             pass
     else:
         loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
+        print("Server is listening on port 3000")
 
     cleanup_temp()
 
