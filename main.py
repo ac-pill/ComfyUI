@@ -8,8 +8,9 @@ import json
 import sys
 from multiprocessing import Pipe
 parent_conn, child_conn = Pipe()
+from comfy.cli_args import parse_args
 ## Adding to main.py
-from comfy.cli_args import args
+
 import comfy.utils
 
 if os.name == "nt":
@@ -33,7 +34,7 @@ import folder_paths
 import server
 from nodes import init_custom_nodes
 
-print("LOADING MAIN.PY - V02")
+print("LOADING MAIN.PY - V03")
 
 
 def prompt_worker(q, server):
@@ -43,7 +44,7 @@ def prompt_worker(q, server):
         e.execute(item[2], item[1], item[3], item[4])
         q.task_done(item_id, e.outputs_ui)
 
-async def run(server, address='', port=3000, verbose=True, call_on_start=None):
+async def run(server, address='', port=8188, verbose=True, call_on_start=None):
     await asyncio.gather(server.start(address, port, verbose, call_on_start), server.publish_loop())
 
 def hijack_progress(server):
@@ -78,20 +79,10 @@ def load_extra_path_config(yaml_path):
                 folder_paths.add_model_folder_path(x, full_path)
 
 def main_func(args, is_server_ready, child_conn):
-    import argparse
 
     print("Starting Server")
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--listen", type=str, default='')
-    parser.add_argument("--port", type=int, default=8188)
-    parser.add_argument("--dont_print_server", action='store_true')
-    parser.add_argument("--auto_launch", action='store_true')
-    parser.add_argument("--extra_model_paths_config", nargs="*", action='append', default=[])
-    parser.add_argument("--output_directory", type=str, help="Directory for output")
-    parser.add_argument("--quick_test_for_ci", action='store_true', help="Quick test for CI")
-    # ... add other command-line arguments that your script needs ...
-    args = parser.parse_args(args)
+    args = parse_args(args)
 
     cleanup_temp()
 
