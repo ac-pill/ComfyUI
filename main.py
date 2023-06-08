@@ -8,7 +8,9 @@ import json
 import sys
 from multiprocessing import Pipe
 parent_conn, child_conn = Pipe()
-from comfy.cli_args import parse_args
+from comfy.cli_args import parse_args, set_args
+# global variables
+args = None  # global variable to store arguments
 ## Adding to main.py
 
 import comfy.utils
@@ -73,6 +75,7 @@ def main_func(args, is_server_ready, child_conn):
     print("Starting Server")
 
     args = parse_args(args)
+    set_args(args)
 
     if args.dont_upcast_attention:
         print("disabling upcasting of attention")

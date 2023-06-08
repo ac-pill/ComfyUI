@@ -1,5 +1,8 @@
 import argparse
 
+# global variables
+args = None  # global variable to store arguments
+
 def parse_args(arg_dict=None):
 
     parser = argparse.ArgumentParser()
@@ -43,3 +46,7 @@ def parse_args(arg_dict=None):
         args.auto_launch = True
         
     return args
+
+def set_args(arg_dict):
+    global args
+    args = parse_args(arg_dict)
