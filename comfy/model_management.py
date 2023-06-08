@@ -2,6 +2,8 @@ import psutil
 from enum import Enum
 from comfy.cli_args import args
 
+print(args) # remove this
+
 class VRAMState(Enum):
     CPU = 0
     NO_VRAM = 1
