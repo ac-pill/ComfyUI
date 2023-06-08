@@ -3,6 +3,8 @@ from enum import Enum
 from comfy.cli_args import args
 import torch
 
+print(args) # remove this
+
 class VRAMState(Enum):
     DISABLED = 0    #No vram present: no need to move models to vram
     NO_VRAM = 1     #Very low vram: enable all the options to save vram
