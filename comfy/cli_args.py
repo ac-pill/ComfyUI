@@ -4,6 +4,7 @@ import argparse
 args = None  # global variable to store arguments
 
 def parse_args(arg_dict=None):
+    global args # global variable to store arguments
 
     parser = argparse.ArgumentParser()
 
