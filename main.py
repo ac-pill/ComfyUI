@@ -8,7 +8,7 @@ import json
 import sys
 from multiprocessing import Pipe
 parent_conn, child_conn = Pipe()
-from comfy.cli_args import args as args_module
+from comfy.cli_args import Arguments # Setting arguments for the first time
 ## Adding to main.py
 
 import comfy.utils
@@ -76,7 +76,7 @@ def main_func(args_dict, is_server_ready, child_conn):
 
     print(f'Args from shared.py:{args_dict}')
 
-    args = args_module.Arguments()
+    args = Arguments()
     args.set_args(args_dict)
 
     print(f'Args set in main.py:{args}')
