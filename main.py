@@ -70,15 +70,15 @@ def load_extra_path_config(yaml_path):
                 print("Adding extra search path", x, full_path)
                 folder_paths.add_model_folder_path(x, full_path)
 
-def main_func(args, is_server_ready, child_conn):
+def main_func(args_dict, is_server_ready, child_conn):
 
     cleanup_temp()
 
     print("Starting Server")
 
-    print(f'Args from shared.py:{args}')
+    print(f'Args from shared.py:{args_dict}')
 
-    args.set_args(args)
+    args.set_args(args_dict)
 
     print(f'Args set in main.py:{args}')
 
