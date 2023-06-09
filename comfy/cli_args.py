@@ -54,6 +54,14 @@ def init_args(arg_dict=None):
     args.set_args(arg_dict)
     return args
 
+args = None  # Initialize args to None
+
+def init_args(arg_dict=None):
+    global args
+    args = Arguments()
+    args.set_args(arg_dict)
+    return args
+
 def parse_args(arg_dict=None):
     parser = argparse.ArgumentParser()
 
