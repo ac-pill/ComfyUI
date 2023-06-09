@@ -76,7 +76,6 @@ def main_func(args_dict, is_server_ready, child_conn):
     print(f'Args from shared.py:{args_dict}')
     args = init_args(args_dict)
 
-    print(f'Args set in main.py:{args}')
     print(f'DONT UPCAST: {args.dont_upcast_attention}')
 
     with open("temp_args.json", 'r') as f:
@@ -132,9 +131,10 @@ def main_func(args_dict, is_server_ready, child_conn):
             pass
     else:
         loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
-        print("Server is listening on port 3000")
 
     cleanup_temp()
+
+    print("Reaching is Ready")
 
     # After server is ready
     is_server_ready.value = True
