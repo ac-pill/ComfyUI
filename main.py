@@ -8,7 +8,7 @@ import json
 import sys
 from multiprocessing import Pipe
 parent_conn, child_conn = Pipe()
-from comfy.cli_args import parse_args, set_args
+from comfy.cli_args import set_args
 # global variables
 args = None  # global variable to store arguments
 ## Adding to main.py
@@ -72,9 +72,10 @@ def load_extra_path_config(yaml_path):
 
 def main_func(args, is_server_ready, child_conn):
 
+    cleanup_temp()
+
     print("Starting Server")
 
-    args = parse_args(args)
     set_args(args)
 
     if args.dont_upcast_attention:
@@ -84,8 +85,6 @@ def main_func(args, is_server_ready, child_conn):
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         print("Set cuda device to:", args.cuda_device)
-
-    cleanup_temp()
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

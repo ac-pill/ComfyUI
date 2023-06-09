@@ -1,7 +1,7 @@
 import psutil
 from enum import Enum
-from comfy.cli_args import get_args # Change to function
-args = get_args()
+from comfy.cli_args import args
+
 print(f'Arguments in model_management:{args}')
 
 class VRAMState(Enum):

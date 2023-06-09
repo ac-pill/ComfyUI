@@ -1,11 +1,16 @@
 import argparse
+import json
+import os
 
-# global variables
-args = None  # global variable to store arguments
+# Create Temp Args
+JSON_FILE_PATH = "temp/temp_args.json"
+
+def check_and_create_directory():
+    directory = os.path.dirname(JSON_FILE_PATH)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 def parse_args(arg_dict=None):
-    global args # global variable to store arguments
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--listen", type=str, default="127.0.0.1", metavar="IP", nargs="?", const="0.0.0.0", help="Specify the IP address to listen on (default: 127.0.0.1). If --listen is provided without an argument, it defaults to 0.0.0.0. (listens on all)")
@@ -45,17 +50,27 @@ def parse_args(arg_dict=None):
 
     if args.windows_standalone_build:
         args.auto_launch = True
+
+    # save args to a json file
+    check_and_create_directory()
+    with open(JSON_FILE_PATH, 'w') as f:
+        json.dump(vars(args), f)
         
     return args
 
 def set_args(arg_dict):
-    global args
     args = parse_args(arg_dict)
-
-def get_args():
-    global args
     return args
 
-if __name__ == '__main__':
-    # this will ensure args is always initialized with some defaults
-    parse_args()
+def get_args():
+    # load args from the json file
+    try:
+        with open(JSON_FILE_PATH, 'r') as f:
+            arg_dict = json.load(f)
+        args = argparse.Namespace(**arg_dict)
+    except FileNotFoundError:
+        print(f'Error: {JSON_FILE_PATH} not found')
+        args = parse_args()  # fall back to default args if json file not found
+    return args
+
+args = get_args()
