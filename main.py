@@ -76,6 +76,8 @@ def main_func(args, is_server_ready, child_conn):
 
     print("Starting Server")
 
+    print(f'Args in main.py:{args}')
+
     set_args(args)
 
     if args.dont_upcast_attention:
