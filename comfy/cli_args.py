@@ -3,12 +3,12 @@ import json
 import os
 
 # Create Temp Args
-JSON_FILE_PATH = "temp/temp_args.json"
+JSON_FILE_PATH = "temp_args.json"
 
-def check_and_create_directory():
-    directory = os.path.dirname(JSON_FILE_PATH)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+# def check_and_create_directory():
+#     directory = os.path.dirname(JSON_FILE_PATH)
+#     if not os.path.exists(directory):
+#         os.makedirs(directory)
 
 def parse_args(arg_dict=None):
     parser = argparse.ArgumentParser()
@@ -52,7 +52,7 @@ def parse_args(arg_dict=None):
         args.auto_launch = True
 
     # save args to a json file
-    check_and_create_directory()
+    # check_and_create_directory()
     with open(JSON_FILE_PATH, 'w') as f:
         json.dump(vars(args), f)
         
