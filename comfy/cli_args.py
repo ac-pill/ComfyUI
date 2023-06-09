@@ -54,7 +54,7 @@ def parse_args(arg_dict=None):
 
 class Arguments:
     def __init__(self):
-        self._args = None
+        self._args = parse_args()
 
     def set_args(self, arg_dict):
         self._args = parse_args(arg_dict)
