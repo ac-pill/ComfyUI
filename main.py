@@ -73,12 +73,15 @@ def main_func(args_dict, is_server_ready, child_conn):
     cleanup_temp()
 
     print("Starting Server")
-
     print(f'Args from shared.py:{args_dict}')
-
     args = init_args(args_dict)
 
     print(f'Args set in main.py:{args}')
+    print(f'DONT UPCAST: {args.dont_upcast_attention}')
+
+    with open("temp_args.json", 'r') as f:
+        this = json.load(f)
+    print(f'JSON FILE CONTAINER:{this}')
 
     if args.dont_upcast_attention:
         print("disabling upcasting of attention")
