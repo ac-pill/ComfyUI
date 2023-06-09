@@ -4,8 +4,6 @@ from comfy.cli_args import get_args # Change to function
 args = get_args()
 import torch
 
-print(f'Arguments in model_management:{args.port}')
-
 class VRAMState(Enum):
     DISABLED = 0    #No vram present: no need to move models to vram
     NO_VRAM = 1     #Very low vram: enable all the options to save vram
