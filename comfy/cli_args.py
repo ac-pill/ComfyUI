@@ -54,21 +54,31 @@ def parse_args(arg_dict=None):
 
 class Arguments:
     def __init__(self):
-        self.args = None
+        self._args = None
 
     def set_args(self, arg_dict):
-        self.args = parse_args(arg_dict)
+        self._args = parse_args(arg_dict)
 
     def get_args(self):
-        if self.args is None:
+        if self._args is None:
             # load args from the json file
             try:
                 with open(JSON_FILE_PATH, 'r') as f:
                     arg_dict = json.load(f)
-                self.args = argparse.Namespace(**arg_dict)
+                self._args = argparse.Namespace(**arg_dict)
             except FileNotFoundError:
                 print(f'Error: {JSON_FILE_PATH} not found')
-                self.args = parse_args()  # fall back to default args if json file not found
-        return self.args
+                self._args = parse_args()  # fall back to default args if json file not found
+        return self._args
+
+    # Overriding the attribute access methods
+    def __getattr__(self, name):
+        return getattr(self.get_args(), name)
+
+    def __setattr__(self, name, value):
+        if name == "_args":
+            super().__setattr__(name, value)
+        else:
+            setattr(self.get_args(), name, value)
 
 args = Arguments()
