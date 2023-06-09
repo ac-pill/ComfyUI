@@ -15,7 +15,7 @@ from comfy.cli_args import init_args # Args set
 
 from multiprocessing import Pipe
 parent_conn, child_conn = Pipe()
-from comfy.cli_args import parse_args, set_args
+from comfy.cli_args import set_args
 # global variables
 args = None  # global variable to store arguments
 ## Adding to main.py
@@ -104,10 +104,6 @@ def main_func(args_dict, child_conn):
 
     print(f'DONT UPCAST: {args.dont_upcast_attention}')
 
-    # For debugging temp args JSON File
-    with open("temp_args.json", 'r') as f:
-        this = json.load(f)
-    print(f'JSON FILE CONTAINER:{this}')
     set_args(args)
 
     if args.dont_upcast_attention:
@@ -121,8 +117,6 @@ def main_func(args_dict, child_conn):
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         print("Set cuda device to:", args.cuda_device)
-    
-    threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start()
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
