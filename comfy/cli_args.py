@@ -100,7 +100,7 @@ def parse_args(arg_dict=None):
         args.auto_launch = True
 
     # save args to a json file
-    check_and_create_directory()
+    # check_and_create_directory()
     with open(JSON_FILE_PATH, 'w') as f:
         json.dump(vars(args), f)
         
