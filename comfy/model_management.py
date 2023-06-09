@@ -2,7 +2,7 @@ import psutil
 from enum import Enum
 from comfy.cli_args import args
 
-print(f'Arguments in model_management:{args}')
+print(f'Arguments in model_management:{args.directml}')
 
 class VRAMState(Enum):
     CPU = 0
