@@ -100,26 +100,29 @@ def parse_args(arg_dict=None):
         args.auto_launch = True
 
     # save args to a json file
-    # check_and_create_directory()
     with open(JSON_FILE_PATH, 'w') as f:
         json.dump(vars(args), f)
         
     return args
 
-def set_args(arg_dict):
-    args = parse_args(arg_dict)
-    return args
+class Arguments:
+    def __init__(self):
+        self.args = None
 
-def get_args():
-    # load args from the json file
-    try:
-        with open(JSON_FILE_PATH, 'r') as f:
-            arg_dict = json.load(f)
-        args = argparse.Namespace(**arg_dict)
-    except FileNotFoundError:
-        print(f'Error: {JSON_FILE_PATH} not found')
-        args = parse_args()  # fall back to default args if json file not found
-    return args
+    def set_args(self, arg_dict):
+        self.args = parse_args(arg_dict)
+
+    def get_args(self):
+        if self.args is None:
+            # load args from the json file
+            try:
+                with open(JSON_FILE_PATH, 'r') as f:
+                    arg_dict = json.load(f)
+                self.args = argparse.Namespace(**arg_dict)
+            except FileNotFoundError:
+                print(f'Error: {JSON_FILE_PATH} not found')
+                self.args = parse_args()  # fall back to default args if json file not found
+        return self.args
 
 class Arguments:
     def __init__(self):
