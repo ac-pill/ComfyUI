@@ -60,6 +60,7 @@ def get_torch_device():
     global xpu_available
     global directml_enabled
     global cpu_state
+    torch.multiprocessing.set_start_method('spawn', force=True) # FORCE Multiprocessing
     if directml_enabled:
         global directml_device
         return directml_device
