@@ -24,7 +24,7 @@ import folder_paths
 import server
 from nodes import init_custom_nodes
 
-print("LOADING MAIN.PY - V03")
+print("LOADING MAIN.PY - V04")
 
 
 def prompt_worker(q, server):
@@ -133,9 +133,6 @@ def main_func(args_dict, is_server_ready, child_conn):
         loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
 
     cleanup_temp()
-
-    # After server is ready
-    is_server_ready.value = True
 
 if __name__ == "__main__":
     main_func(sys.argv[1:])

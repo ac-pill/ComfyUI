@@ -565,6 +565,7 @@ class PromptServer():
             print("Starting server\n")
             print("To see the GUI go to: http://{}:{}".format(address, port))
         if call_on_start is not None:
+            print("CALL ON START IS NOT NONE")
             call_on_start(address, port)
             self.pipe.send('server is ready')
 
