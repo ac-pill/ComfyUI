@@ -92,11 +92,13 @@ def main_func(args_dict, is_server_ready, child_conn):
 
     print(f"Passing child_conn with id {id(child_conn)} to MAIN.PY")
 
+
+    q = execution.PromptQueue(server)
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     prompt_server = server.PromptServer(loop, args, child_conn) # Changing here for adding pipe communication
-    prompt_server.prompt_queue = execution.PromptQueue(prompt_server)
-    q = prompt_server.prompt_queue
+    q = execution.PromptQueue(prompt_server)
 
     extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
     if os.path.isfile(extra_model_paths_config_path):
