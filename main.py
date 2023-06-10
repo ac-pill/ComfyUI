@@ -90,6 +90,8 @@ def main_func(args_dict, is_server_ready, child_conn):
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         print("Set cuda device to:", args.cuda_device)
 
+    print(f"Passing child_conn with id {id(child_conn)} to MAIN.PY")
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     prompt_server = server.PromptServer(loop, args, child_conn) # Changing here for adding pipe communication
