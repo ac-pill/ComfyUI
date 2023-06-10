@@ -110,6 +110,7 @@ def main_func(args_dict, is_server_ready, child_conn):
     prompt_server.add_routes() # Changing name for clarity
     hijack_progress(prompt_server) # Changing name for clarity
 
+    print("Starting prompt_worker thread")
     threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
 
     if args.output_directory:
@@ -127,6 +128,7 @@ def main_func(args_dict, is_server_ready, child_conn):
             webbrowser.open("http://{}:{}".format(address, port))
         call_on_start = startup_server
 
+    print("Starting asyncio event loop")
     if os.name == "nt":
         try:
             loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
