@@ -434,16 +434,17 @@ class PromptServer():
                 self.delete_images(data['filenames'])
             return web.Response(status=200)
         
-        ## Shutdown Server
-        @routes.get('/shutdown')
-        async def shutdown(request):
-            # Check if the pipe exists
-            if self.pipe:
-                # Send the 'shutdown' command through the pipe
-                self.pipe.send('shutdown')
-            else:
-                print("Cannot shutdown because the pipe is not connected.")
-            return web.Response()
+    ## Shutdown Server
+    def shutdown(self):
+        # Check if the pipe exists
+        if self.pipe:
+            # Send the 'shutdown' command through the pipe
+            print("Shutdown Process")
+            print(f"Using pipe with id {id(self.pipe)} to send message")
+            self.pipe.send('shutdown')
+        else:
+            print("Cannot shutdown because the pipe is not connected.")
+        return 
        
     ## Send Executed Image to API
     def send_message_to_bot(self, message):
@@ -460,6 +461,8 @@ class PromptServer():
                 # Add log
                 # Delete all input files
                 self.delete_all_input_files()
+                self.shutdown()
+
 
     
     ## Delete Images from Server
