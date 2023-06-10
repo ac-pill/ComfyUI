@@ -34,6 +34,7 @@ if args.directml is not None:
 
 try:
     import torch
+    torch.multiprocessing.set_start_method('spawn', force=True) # FORCE Multiprocessing
     if directml_enabled:
         total_vram = 4097 #TODO
     else:
