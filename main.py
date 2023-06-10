@@ -8,7 +8,7 @@ import json
 import sys
 from multiprocessing import Pipe
 parent_conn, child_conn = Pipe()
-from comfy.cli_args import init_args # Setting arguments for the first time
+from comfy.cli_args import init_args # Args set
 ## Adding to main.py
 
 import comfy.utils
@@ -133,8 +133,6 @@ def main_func(args_dict, is_server_ready, child_conn):
         loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
 
     cleanup_temp()
-
-    print("Reaching is Ready")
 
     # After server is ready
     is_server_ready.value = True

@@ -7,7 +7,6 @@ import execution
 import uuid
 import json
 import glob
-import jsonify
 from PIL import Image
 from io import BytesIO
 
@@ -52,7 +51,7 @@ def create_cors_middleware(allowed_origin: str):
     return cors_middleware
 
 class PromptServer():
-    def __init__(self, loop, args, pipe=None):
+    def __init__(self, loop, args, pipe=None): ## Get the args back to top as comfy.cli_args
         PromptServer.instance = self
 
         mimetypes.init(); 
@@ -567,4 +566,5 @@ class PromptServer():
             print("To see the GUI go to: http://{}:{}".format(address, port))
         if call_on_start is not None:
             call_on_start(address, port)
+            self.pipe.send('server is ready')
 
