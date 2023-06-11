@@ -440,7 +440,7 @@ class PromptServer():
         if self.pipe:
             # Send the 'shutdown' command through the pipe
             print("Shutdown Process")
-            print(f"Using pipe with id {id(self.pipe)} to send message")
+            print(f"Shutdown Message: \nUsing pipe with id {id(self.pipe)} to send shutdown")
             self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
