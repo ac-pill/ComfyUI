@@ -25,6 +25,7 @@ import mimetypes
 
 ## Using Requests Temporarily, remove to use aiohttp
 import requests
+import time
 
 @web.middleware
 async def cache_control(request: web.Request, handler):
@@ -307,12 +308,6 @@ class PromptServer():
         @routes.get("/history")
         async def get_history(request):
             return web.json_response(self.prompt_queue.get_history())
-        
-        ## To implement
-        # @routes.get('/task_status')
-        # def get_task_status(request):
-        #     prompt_id = request.args.get('prompt_id')
-        #     return jsonify({ 'status': task_status_dict.get(prompt_id, 'not found') })
 
         @routes.get("/queue")
         async def get_queue(request):
@@ -329,7 +324,7 @@ class PromptServer():
             out_string = ""
             json_data =  await request.json()
 
-            # print(json_data) # to check incoming prompt
+            print(f"POST Prompt Received: \n {json_data}") # Remove
 
             if "number" in json_data:
                 number = float(json_data['number'])
@@ -441,6 +436,7 @@ class PromptServer():
             # Send the 'shutdown' command through the pipe
             print("Shutdown Process")
             print(f"Shutdown Message: \nUsing pipe with id {id(self.pipe)} to send shutdown")
+            time.sleep(5)
             self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
