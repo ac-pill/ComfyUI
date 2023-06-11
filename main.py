@@ -27,7 +27,6 @@ from nodes import init_custom_nodes
 
 print("LOADING MAIN.PY - V04")
 
-
 def prompt_worker(q, server):
     e = execution.PromptExecutor(server)
     while True:
@@ -92,9 +91,6 @@ def main_func(args_dict, is_server_ready, child_conn):
         print("Set cuda device to:", args.cuda_device)
 
     print(f"Passing child_conn with id {id(child_conn)} to MAIN.PY")
-
-
-    q = execution.PromptQueue(server)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
