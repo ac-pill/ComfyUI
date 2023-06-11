@@ -6,8 +6,7 @@ import threading
 ## Adding to main.py
 import json
 import sys
-from multiprocessing import Pipe, set_start_method
-#set_start_method('spawn', force=True)
+from multiprocessing import Pipe
 
 parent_conn, child_conn = Pipe()
 from comfy.cli_args import init_args # Args set
