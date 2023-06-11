@@ -28,6 +28,16 @@ import comfy.model_management
 
 ## Using Requests for Now, replace later with aiohttp
 import requests
+import time
+
+class BinaryEventTypes:
+    PREVIEW_IMAGE = 1
+
+async def send_socket_catch_exception(function, message):
+    try:
+        await function(message)
+    except (aiohttp.ClientError, aiohttp.ClientPayloadError, ConnectionResetError) as err:
+        print("send error:", err)
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
