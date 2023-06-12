@@ -69,7 +69,7 @@ def load_extra_path_config(yaml_path):
                 print("Adding extra search path", x, full_path)
                 folder_paths.add_model_folder_path(x, full_path)
 
-def main_func(args_dict, child_conn):
+async def main_func(args_dict, child_conn):
 
     cleanup_temp()
 
@@ -132,11 +132,11 @@ def main_func(args_dict, child_conn):
     print("Starting asyncio event loop")
     if os.name == "nt":
         try:
-            loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
+            await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
         except KeyboardInterrupt:
             pass
     else:
-        loop.create_task(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
+        await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
 
     cleanup_temp()
 
