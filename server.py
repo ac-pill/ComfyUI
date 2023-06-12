@@ -499,6 +499,7 @@ class PromptServer():
         return prompt_info
 
     async def send(self, event, data, sid=None):
+        print(f'')
         message = {"type": event, "data": data}
        
         if isinstance(message, str) == False:
@@ -568,4 +569,4 @@ class PromptServer():
             print(f"Using pipe with id {id(self.pipe)} to send message")
             self.pipe.send('server is ready')
             call_on_start(address, port)
-
+            # Add here to get the prompt and task etc
