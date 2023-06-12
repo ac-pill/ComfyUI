@@ -133,24 +133,13 @@ def main_func(args_dict, child_conn):
         call_on_start = startup_server
 
     print("Starting asyncio event loop")
-    # if os.name == "nt":
-    #     try:
-    #         await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
-    #     except KeyboardInterrupt:
-    #         pass
-    # else:
-    #     await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
-
-    done_event = Event()
-    async def run_and_set_event(server, address='', port=8188, verbose=True, call_on_start=None, done_event=None):
-        await run(server, address=address, port=port, verbose=verbose, call_on_start=call_on_start)
-        if done_event is not None:
-            done_event.set()
-    # Schedule the coroutine with ensure_future
-    asyncio.create_task(run_and_set_event(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start, done_event=done_event))
-
-    while not done_event.is_set():
-        time.sleep(1) 
+    if os.name == "nt":
+        try:
+            loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
+        except KeyboardInterrupt:
+            pass
+    else:
+        loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
 
     cleanup_temp()
 
