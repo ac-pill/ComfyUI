@@ -136,11 +136,11 @@ async def main_func(args_dict, is_server_ready, child_conn):
     print("Starting asyncio event loop")
     if os.name == "nt":
         try:
-            run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
+            await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
         except KeyboardInterrupt:
             pass
     else:
-        run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
+        await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
 
     cleanup_temp()
 
