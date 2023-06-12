@@ -113,7 +113,9 @@ def main_func(args_dict, is_server_ready, child_conn):
     hijack_progress(prompt_server) # Changing name for clarity
 
     print("Starting prompt_worker thread")
-    mp.Process(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
+    mp.Process(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start()
+    # t1 = threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
+    
     # threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
 
     if args.output_directory:
