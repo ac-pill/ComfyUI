@@ -8,6 +8,8 @@ import json
 import sys
 from torch.multiprocessing import Pipe
 
+import torch.multiprocessing as mp
+
 from comfy.cli_args import init_args # Args set
 
 ## Adding to main.py
@@ -78,6 +80,7 @@ def main_func(args_dict, is_server_ready, child_conn):
 
     print(f'DONT UPCAST: {args.dont_upcast_attention}')
 
+    # For debugging temp args JSON File
     with open("temp_args.json", 'r') as f:
         this = json.load(f)
     print(f'JSON FILE CONTAINER:{this}')
@@ -90,7 +93,7 @@ def main_func(args_dict, is_server_ready, child_conn):
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         print("Set cuda device to:", args.cuda_device)
 
-    print(f"Passing child_conn with id {id(child_conn)} to MAIN.PY")
+    print(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -110,7 +113,8 @@ def main_func(args_dict, is_server_ready, child_conn):
     hijack_progress(prompt_server) # Changing name for clarity
 
     print("Starting prompt_worker thread")
-    threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
+    mp.Process(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
+    # threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
 
     if args.output_directory:
         output_dir = os.path.abspath(args.output_directory)
