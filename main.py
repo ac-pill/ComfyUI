@@ -136,7 +136,7 @@ def main_func(args_dict, child_conn):
     future = executor.submit(start_server, args, child_conn, call_on_start)
     if os.name == "nt":
         try:
-            loop.run_until_complete(run(server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
+            await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
         except KeyboardInterrupt:
             pass
     else:
