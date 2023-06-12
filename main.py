@@ -6,9 +6,9 @@ import threading
 ## Adding to main.py
 import json
 import sys
-from torch.multiprocessing import Pipe
+from multiprocessing import Pipe
 
-import torch.multiprocessing as mp
+# import torch.multiprocessing as mp
 
 from comfy.cli_args import init_args # Args set
 
@@ -113,10 +113,10 @@ def main_func(args_dict, is_server_ready, child_conn):
     hijack_progress(prompt_server) # Changing name for clarity
 
     print("Starting prompt_worker thread")
-    mp.Process(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start()
+    # mp.Process(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start()
     # t1 = threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
     
-    # threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
+    threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
 
     if args.output_directory:
         output_dir = os.path.abspath(args.output_directory)
