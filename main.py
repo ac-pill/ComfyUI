@@ -7,6 +7,8 @@ import threading
 import json
 import sys
 
+from asyncio import Event
+
 # import torch.multiprocessing as mp
 
 from comfy.cli_args import init_args # Args set
@@ -138,16 +140,17 @@ def main_func(args_dict, child_conn):
     # else:
     #     await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
 
-    try:
-        # Run the server.
+    done_event = Event()
+    async def run_and_set_event(server, address='', port=8188, verbose=True, call_on_start=None, done_event=None):
+        await run(server, address=address, port=port, verbose=verbose, call_on_start=call_on_start)
+        if done_event is not None:
+            done_event.set()
+    # Schedule the coroutine with ensure_future
+    asyncio.ensure_future(run_and_set_event(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start, done_event=done_event))
 
-        asyncio.ensure_future(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
-    except Exception as e:
-        print("Error occurred:", e)
-    finally:
-        # Close the loop at the end to free up resources.
-        loop.close()
-
+    # Block the main thread until the event is set
+    loop.run_until_complete(done_event.wait())
+    
     cleanup_temp()
 
 if __name__ == "__main__":
