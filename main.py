@@ -96,7 +96,7 @@ def main_func(args_dict, is_server_ready, child_conn):
     print(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
 
     loop = asyncio.get_running_loop()
-    asyncio.set_event_loop(loop)
+    # asyncio.set_event_loop(loop)
     prompt_server = server.PromptServer(loop, args, child_conn) # Changing here for adding pipe communication
     q = execution.PromptQueue(prompt_server)
 
