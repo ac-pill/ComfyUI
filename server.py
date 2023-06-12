@@ -567,6 +567,6 @@ class PromptServer():
         if call_on_start is not None:
             print("Auto Start Command Running")
             print(f"Using pipe with id {id(self.pipe)} to send message")
-            self.pipe.send('server is ready')
+            self.pipe.send('ready')
             call_on_start(address, port)
             # Add here to get the prompt and task etc
