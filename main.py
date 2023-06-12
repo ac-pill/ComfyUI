@@ -9,7 +9,6 @@ import sys
 from torch.multiprocessing import Pipe
 
 import torch.multiprocessing as mp
-mp.set_start_method('spawn', force=True)
 
 from comfy.cli_args import init_args # Args set
 
