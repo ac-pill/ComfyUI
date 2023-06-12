@@ -8,6 +8,7 @@ import json
 import sys
 
 from asyncio import Event
+import time
 
 # import torch.multiprocessing as mp
 
@@ -148,9 +149,9 @@ def main_func(args_dict, child_conn):
     # Schedule the coroutine with ensure_future
     asyncio.ensure_future(run_and_set_event(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start, done_event=done_event))
 
-    # Block the main thread until the event is set
-    loop.run_until_complete(done_event.wait())
-    
+    while not done_event.is_set():
+        time.sleep(1) 
+
     cleanup_temp()
 
 if __name__ == "__main__":
