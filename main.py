@@ -147,7 +147,7 @@ def main_func(args_dict, child_conn):
         if done_event is not None:
             done_event.set()
     # Schedule the coroutine with ensure_future
-    asyncio.ensure_future(run_and_set_event(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start, done_event=done_event))
+    asyncio.create_task(run_and_set_event(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start, done_event=done_event))
 
     while not done_event.is_set():
         time.sleep(1) 
