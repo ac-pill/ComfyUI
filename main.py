@@ -113,9 +113,6 @@ def main_func(args_dict, is_server_ready, child_conn):
     hijack_progress(prompt_server) # Changing name for clarity
 
     print("Starting prompt_worker thread")
-    # mp.Process(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start()
-    # t1 = threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
-    
     threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
 
     if args.output_directory:
@@ -140,7 +137,7 @@ def main_func(args_dict, is_server_ready, child_conn):
         except KeyboardInterrupt:
             pass
     else:
-        loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
+        loop.create_task(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
 
     cleanup_temp()
 
