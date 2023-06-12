@@ -94,8 +94,8 @@ def main_func(args_dict, child_conn):
 
     print(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    loop = asyncio.get_event_loop()
+    # asyncio.set_event_loop(loop)
     prompt_server = server.PromptServer(loop, args, child_conn) # Changing here for adding pipe communication
     q = execution.PromptQueue(prompt_server)
 
@@ -141,7 +141,7 @@ def main_func(args_dict, child_conn):
     try:
         # Run the server.
 
-        loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
+        asyncio.ensure_future(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
     except Exception as e:
         print("Error occurred:", e)
     finally:
