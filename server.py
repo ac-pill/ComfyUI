@@ -499,16 +499,49 @@ class PromptServer():
         for filename in filenames:
             filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
             print(f'FILE NAME: {filepath}')
-            m = MultipartEncoder(
-                fields={'image': (filename, open(filepath, 'rb'), 'text/plain')}
-            )
-            response = requests.post(f'{server_id}:{port}/upload', data=m,
-                                    headers={'Content-Type': m.content_type})
+            # Load image
+            img = Image.open(filepath)
+
+            if img.mode == 'RGB':
+                if img.mode == "RGBA":
+                    r, g, b, a = img.split()
+                    new_img = Image.merge('RGB', (r, g, b))
+                else:
+                    new_img = img.convert("RGB")
+
+                buffer = BytesIO()
+                new_img.save(buffer, format='PNG')
+                buffer.seek(0)
+                data = buffer.read()
+
+            elif img.mode == 'RGBA':
+                if img.mode == "RGBA":
+                    _, _, _, a = img.split()
+                else:
+                    a = Image.new('L', img.size, 255)
+
+                # alpha img
+                alpha_img = Image.new('RGBA', img.size)
+                alpha_img.putalpha(a)
+                alpha_buffer = BytesIO()
+                alpha_img.save(alpha_buffer, format='PNG')
+                alpha_buffer.seek(0)
+                data = alpha_buffer.read()
+
+            else:
+                print(f"Unknown image mode for {filename}: {img.mode}")
+                continue 
+
+            url = f'http://{server_id}:{port}/upload'  
+            headers = {'Content-Type': 'image/png', "Content-Disposition": f'attachment;filename={filename}'}
+            response = requests.post(url, headers=headers, data=data)
+
             if response.status_code != 200:
                 print(f'Failed to upload file {filename}: {response.content}')
             else:
                 print(f'Uploaded file {filename}: {response.content}')
-                time.sleep(10)
+
+            time.sleep(10)
             
 
     def add_routes(self):
