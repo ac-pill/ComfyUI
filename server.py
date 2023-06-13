@@ -338,6 +338,8 @@ class PromptServer():
 
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
+                print(f'PROMPT to VALIDATE: {prompt}')
+                time.sleep(10)
                 valid = execution.validate_prompt(prompt)
                 print(f'Valid Prompt: {valid}')
                 extra_data = {}
