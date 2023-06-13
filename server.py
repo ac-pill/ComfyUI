@@ -454,6 +454,9 @@ class PromptServer():
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
             response = requests.post(f'{server_id}{port}/executed', json=message)
+            while True:
+                print("holding execution")
+                pass
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
                 time.sleep(20)
@@ -461,8 +464,6 @@ class PromptServer():
             else:
                 if response.text == "Bot Done":
                     print(response.text)
-                    while True:
-                        pass
                     #self.shutdown()
                 else:
                     print(f'Unexpected response from bot: {response.text}')
