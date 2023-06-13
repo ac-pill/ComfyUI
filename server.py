@@ -454,10 +454,12 @@ class PromptServer():
             response = requests.post(f'{server_id}{port}/executed', json=message)
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
+                time.sleep(20)
                 # Add log
             else:
                 # Add log
                 # Delete all input files
+                time.sleep(20)
                 self.delete_all_input_files()
                 self.shutdown()
 
