@@ -508,6 +508,7 @@ class PromptServer():
                 print(f'Failed to upload file {filename}: {response.content}')
             else:
                 print(f'Uploaded file {filename}: {response.content}')
+                time.sleep(10)
             
 
     def add_routes(self):
