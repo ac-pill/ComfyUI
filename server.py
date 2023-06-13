@@ -503,6 +503,9 @@ class PromptServer():
 
             print(f'IMAGE OPENED: {img}')
 
+            print(f'IMAGE MODE: {img.mode}')
+
+
             if img.mode == 'RGB':
                 if img.mode == "RGBA":
                     r, g, b, a = img.split()
@@ -514,7 +517,6 @@ class PromptServer():
                 new_img.save(buffer, format='PNG')
                 buffer.seek(0)
                 data = buffer.read()
-                print(data.title)
 
             elif img.mode == 'RGBA':
                 if img.mode == "RGBA":
