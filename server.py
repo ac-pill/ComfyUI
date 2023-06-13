@@ -533,6 +533,7 @@ class PromptServer():
                 continue 
 
             url = f'http://{server_id}:{port}/upload'  
+            print(url)
             headers = {'Content-Type': 'image/png', "Content-Disposition": f'attachment;filename={filename}'}
             response = requests.post(url, headers=headers, data=data)
 
