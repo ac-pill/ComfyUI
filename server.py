@@ -447,6 +447,7 @@ class PromptServer():
     ## Send Executed Image to API
     def send_message_to_bot(self, message):
         print("Function send message to BOT")
+        print(f"BOT MESSAGE: {message}")
         # The address of bot's server
         if (self.user_prompt_map[self.prompt_id]["server_id"] != None):
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
