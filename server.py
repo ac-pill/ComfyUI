@@ -495,10 +495,10 @@ class PromptServer():
     def upload_file(self, server_id, port, filenames):
         # Loop over all filenames and upload each file
         output = folder_paths.get_output_directory()
-        print(os.scandir(output))
+        print(os.scandir(output)[0])
         for filename in filenames:
-            print(f'FILE NAME: {filename}')
             filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
+            print(f'FILE NAME: {filepath}')
             m = MultipartEncoder(
                 fields={'image': (filename, open(filename, 'rb'), 'text/plain')}
             )
