@@ -439,6 +439,7 @@ class PromptServer():
             print("Shutdown Process")
             print(f"Shutdown Message: \nUsing pipe with id {id(self.pipe)} to send shutdown")
             time.sleep(5)
+            self.delete_all_input_files()
             self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
@@ -459,7 +460,7 @@ class PromptServer():
                 # Add log
             else:
                 if response.text == "Bot Done":
-                    self.delete_all_input_files()
+                    
                     self.shutdown()
                 else:
                     print(f'Unexpected response from bot: {response.text}')
