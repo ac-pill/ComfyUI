@@ -505,7 +505,6 @@ class PromptServer():
 
             print(f'IMAGE MODE: {img.mode}')
 
-
             if img.mode == 'RGB':
                 if img.mode == "RGBA":
                     r, g, b, a = img.split()
@@ -517,7 +516,6 @@ class PromptServer():
                 new_img.save(buffer, format='PNG')
                 buffer.seek(0)
                 data = buffer.read()
-
             elif img.mode == 'RGBA':
                 if img.mode == "RGBA":
                     _, _, _, a = img.split()
@@ -531,11 +529,11 @@ class PromptServer():
                 alpha_img.save(alpha_buffer, format='PNG')
                 alpha_buffer.seek(0)
                 data = alpha_buffer.read()
-
             else:
                 print(f"Unknown image mode for {filename}: {img.mode}")
                 continue 
 
+            print("here")
             url = f'http://{server_id}:{port}/upload'  
             print(f'>>>>URL: {url}')
             time.sleep(10)
