@@ -506,6 +506,9 @@ class PromptServer():
                                     headers={'Content-Type': m.content_type})
             if response.status_code != 200:
                 print(f'Failed to upload file {filename}: {response.content}')
+            else:
+                print(f'Uploaded file {filename}: {response.content}')
+            
 
     def add_routes(self):
         self.app.add_routes(self.routes)
