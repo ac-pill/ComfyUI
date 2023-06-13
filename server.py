@@ -458,11 +458,11 @@ class PromptServer():
                 time.sleep(20)
                 # Add log
             else:
-                # Add log
-                # Delete all input files
-                time.sleep(20)
-                self.delete_all_input_files()
-                self.shutdown()
+                if response.text == "Bot Done":
+                    self.delete_all_input_files()
+                    self.shutdown()
+                else:
+                    print(f'Unexpected response from bot: {response.text}')
 
 
     
