@@ -495,7 +495,7 @@ class PromptServer():
     def upload_file(self, server_id, port, filenames):
         # Loop over all filenames and upload each file
         output = folder_paths.get_output_directory()
-        url = f'http://{server_id}:{port}/upload'  
+        url = f'{server_id}{port}/upload'  
         print(f'>>>>URL: {url}')
         for filename in filenames:
             filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
@@ -536,7 +536,7 @@ class PromptServer():
                 continue 
 
             print("here")
-            url = f'http://{server_id}:{port}/upload'  
+            url = f'{server_id}{port}/upload' 
             print(f'>>>>URL: {url}')
             time.sleep(10)
             headers = {'Content-Type': 'image/png', "Content-Disposition": f'attachment;filename={filename}'}
