@@ -499,7 +499,7 @@ class PromptServer():
             filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
             print(f'FILE NAME: {filepath}')
             m = MultipartEncoder(
-                fields={'image': (filename, open(filename, 'rb'), 'text/plain')}
+                fields={'image': (filename, open(filepath, 'rb'), 'text/plain')}
             )
             response = requests.post(f'{server_id}:{port}/upload', data=m,
                                     headers={'Content-Type': m.content_type})
