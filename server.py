@@ -26,6 +26,7 @@ import mimetypes
 ## Using Requests Temporarily, remove to use aiohttp
 import requests
 import time
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 @web.middleware
 async def cache_control(request: web.Request, handler):
@@ -430,7 +431,7 @@ class PromptServer():
             if 'filenames' in data:
                 self.delete_images(data['filenames'])
             return web.Response(status=200)
-        
+
     ## Shutdown Server
     def shutdown(self):
         # Check if the pipe exists
@@ -453,20 +454,20 @@ class PromptServer():
         if (self.user_prompt_map[self.prompt_id]["server_id"] != None):
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
+            # Upload Files
+            self.upload_file(server_id, port, message["filenames"])
+            # Send Message to Bot
             response = requests.post(f'{server_id}{port}/executed', json=message)
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
-                time.sleep(20)
                 # Add log
             else:
                 if response.text == "Bot Done":
                     print(response.text)
-                    #self.shutdown()
+                    self.shutdown()
                 else:
                     print(f'Unexpected response from bot: {response.text}')
 
-
-    
     ## Delete Images from Server
     def delete_images(self, filenames: list):
         output_directory = folder_paths.get_output_directory()
@@ -490,6 +491,17 @@ class PromptServer():
             except Exception as e:
                 print(f"Could not delete file {file_path}. Reason: {e}")
 
+    ## Upload files to Bot
+    def upload_file(self, server_id, port, filenames):
+        # Loop over all filenames and upload each file
+        for filename in filenames:
+            m = MultipartEncoder(
+                fields={'image': (filename, open(filename, 'rb'), 'text/plain')}
+            )
+            response = requests.post(f'{server_id}:{port}/upload', data=m,
+                                    headers={'Content-Type': m.content_type})
+            if response.status_code != 200:
+                print(f'Failed to upload file {filename}: {response.content}')
 
     def add_routes(self):
         self.app.add_routes(self.routes)
