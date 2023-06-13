@@ -8,4 +8,6 @@ pytorch_lightning
 aiohttp
 accelerate
 pyyaml
-jsonify
+Pillow
+scipy
+tqdm
