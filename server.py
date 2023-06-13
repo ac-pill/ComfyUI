@@ -494,9 +494,11 @@ class PromptServer():
     ## Upload files to Bot
     def upload_file(self, server_id, port, filenames):
         # Loop over all filenames and upload each file
+        output = folder_paths.get_output_directory()
+        print(os. scandir(output))
         for filename in filenames:
             print(f'FILE NAME: {filename}')
-            filepath = os.path.join('output', filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
+            filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
             m = MultipartEncoder(
                 fields={'image': (filename, open(filename, 'rb'), 'text/plain')}
             )
