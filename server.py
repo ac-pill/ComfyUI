@@ -512,7 +512,7 @@ class PromptServer():
                     new_img = Image.merge('RGB', (r, g, b))
                 else:
                     new_img = img.convert("RGB")
-
+                print(new_img)
                 buffer = BytesIO()
                 new_img.save(buffer, format='PNG')
                 buffer.seek(0)
