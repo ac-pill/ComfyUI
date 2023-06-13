@@ -76,7 +76,7 @@ class PromptServer():
         self.routes = routes
         self.last_node_id = None
         self.client_id = None
-        self.user_prompt_map = {} ## USER ID API REQUEST
+        self.user_prompt_map = {} ## To store USER related info
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
         self.pipe = pipe ## Hold Server state for Parent Process
@@ -533,7 +533,6 @@ class PromptServer():
             print(f'data: {data}')
             print(f'filenames: {data["filenames"]}')
             print(f'prompt_id: {self.prompt_id}')
-            print(f'User ID: {self.user_prompt_map[prompt_id]["user_id"]}')
             # Get the prompt_id
             prompt_id = self.prompt_id
             # Send message to bot
