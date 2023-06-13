@@ -363,7 +363,6 @@ def validate_inputs(prompt, item, validated):
 def validate_prompt(prompt):
     outputs = set()
     print(f'PROMPT in VALIDATION: {prompt}')
-    print(f'PROMPT 11: {prompt["11"]}')
     for x in prompt:
         print(f"Key: {x}")  # Debugging line
         print(f"Value: {prompt[x]}")  # Debugging line
