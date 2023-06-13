@@ -362,6 +362,8 @@ def validate_inputs(prompt, item, validated):
 
 def validate_prompt(prompt):
     outputs = set()
+    print(f'PROMPT in VALIDATION: {prompt}')
+    print(f'PROMPT 11: {prompt["11"]}')
     for x in prompt:
         class_ = nodes.NODE_CLASS_MAPPINGS[prompt[x]['class_type']]
         if hasattr(class_, 'OUTPUT_NODE') and class_.OUTPUT_NODE == True:
