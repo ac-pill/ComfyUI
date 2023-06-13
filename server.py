@@ -495,12 +495,13 @@ class PromptServer():
     def upload_file(self, server_id, port, filenames):
         # Loop over all filenames and upload each file
         output = folder_paths.get_output_directory()
-        print(os.listdir(output))
         for filename in filenames:
             filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
             print(f'FILE NAME: {filepath}')
             # Load image
             img = Image.open(filepath)
+
+            print(f'IMAGE OPENED: {img}')
 
             if img.mode == 'RGB':
                 if img.mode == "RGBA":
