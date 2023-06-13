@@ -29,6 +29,7 @@ import comfy.model_management
 ## Using Requests for Now, replace later with aiohttp
 import requests
 import time
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
@@ -545,7 +546,7 @@ class PromptServer():
             if 'filenames' in data:
                 self.delete_images(data['filenames'])
             return web.Response(status=200)
-        
+
     ## Shutdown Server
     def shutdown(self, message=None):
         # Check if the pipe exists
@@ -568,13 +569,18 @@ class PromptServer():
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
             # Upload Files
-            result = self.upload_file(server_id, port, message)
-            if result:
-                print("Completed Task successfully with Bot Server")
-                self.delete_images(message['filenames'])
+            self.upload_file(server_id, port, message["filenames"])
+            # Send Message to Bot
+            response = requests.post(f'{server_id}{port}/executed', json=message)
+            if response.status_code != 200:
+                print(f'Failed to send message to bot: {response.content}')
+                # Add log
             else:
-                print("Error completing Task with Bot Server")
-                self.delete_images(message['filenames'])
+                if response.text == "Bot Done":
+                    print(response.text)
+                    self.shutdown()
+                else:
+                    print(f'Unexpected response from bot: {response.text}')
 
     ## Delete Images from Server
     def delete_images(self, filenames: list):
