@@ -532,7 +532,8 @@ class PromptServer():
             data['filenames'] = filenames
             print(f'data: {data}')
             print(f'filenames: {data["filenames"]}')
-            print(f'prompt_id: {self.prompt_id}')      
+            print(f'prompt_id: {self.prompt_id}')
+            print(f'User ID: {self.user_prompt_map[prompt_id]["user_id"]}')
             # Get the prompt_id
             prompt_id = self.prompt_id
             # Send message to bot
