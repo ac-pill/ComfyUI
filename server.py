@@ -461,7 +461,8 @@ class PromptServer():
             else:
                 if response.text == "Bot Done":
                     print(response.text)
-                    pass
+                    while True:
+                        pass
                     #self.shutdown()
                 else:
                     print(f'Unexpected response from bot: {response.text}')
