@@ -514,6 +514,7 @@ class PromptServer():
                 new_img.save(buffer, format='PNG')
                 buffer.seek(0)
                 data = buffer.read()
+                print(data.title)
 
             elif img.mode == 'RGBA':
                 if img.mode == "RGBA":
