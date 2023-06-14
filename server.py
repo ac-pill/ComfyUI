@@ -536,10 +536,10 @@ class PromptServer():
                 continue 
 
             print("here")
-            url = f'{server_id}{port}/upload' 
+            url = f'{server_id}{port}/upload?filename={filename}' 
             print(f'>>>>URL: {url}')
             headers = {'Content-Type': 'image/png', "Content-Disposition": f'attachment;filename={filename}'}
-            response = requests.post(url, headers=headers, data=data)
+            response = requests.post(url, data=data)
 
             if response.status_code != 200:
                 print(f'Failed to upload file {filename}: {response.content}')
