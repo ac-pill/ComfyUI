@@ -538,7 +538,6 @@ class PromptServer():
             print("here")
             url = f'{server_id}{port}/upload' 
             print(f'>>>>URL: {url}')
-            time.sleep(10)
             headers = {'Content-Type': 'image/png', "Content-Disposition": f'attachment;filename={filename}'}
             response = requests.post(url, headers=headers, data=data)
 
@@ -546,8 +545,8 @@ class PromptServer():
                 print(f'Failed to upload file {filename}: {response.content}')
             else:
                 print(f'Uploaded file {filename}: {response.content}')
-
-            time.sleep(10)
+            while True:
+                time.sleep(10)
             
 
     def add_routes(self):
