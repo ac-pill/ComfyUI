@@ -442,6 +442,7 @@ class PromptServer():
             self.delete_all_input_files()
             if message is not None:
                 self.delete_images(message['filenames'])
+            time.sleep(10)
             #self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
@@ -462,7 +463,7 @@ class PromptServer():
                 self.shutdown(message)
             else:
                 print("Error completing Task with Bot Server")
-                #self.shutdown(message)
+                self.shutdown(message)
 
 
     ## Delete Images from Server

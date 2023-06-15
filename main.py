@@ -9,9 +9,8 @@ import sys
 
 from concurrent.futures import ThreadPoolExecutor
 
-# import torch.multiprocessing as mp
-
 from comfy.cli_args import init_args # Args set
+import time
 
 ## Adding to main.py
 
@@ -65,6 +64,7 @@ def start_server(args, child_conn, call_on_start=None):
         print("Error occurred:", e)
     finally:
         print("MAIN: Complete Task Loop")
+        time.sleep(30)
         #loop.close()
 
 def prompt_worker(q, server):
