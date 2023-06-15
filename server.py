@@ -464,7 +464,7 @@ class PromptServer():
             else:
                 if response.text == "Bot Done":
                     print(response.text)
-                    self.shutdown()
+                    # self.shutdown()
                 else:
                     print(f'Unexpected response from bot: {response.text}')
 
@@ -633,4 +633,3 @@ class PromptServer():
             print(f"Using pipe with id {id(self.pipe)} to send message")
             self.pipe.send('ready')
             call_on_start(address, port)
-            # Add here to get the prompt and task etc
