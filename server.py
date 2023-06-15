@@ -433,13 +433,15 @@ class PromptServer():
             return web.Response(status=200)
 
     ## Shutdown Server
-    def shutdown(self):
+    def shutdown(self, message=None):
         # Check if the pipe exists
         if self.pipe:
             # Send the 'shutdown' command through the pipe
             print("Shutdown Process")
             print(f"Shutdown Message: \nUsing pipe with id {id(self.pipe)} to send shutdown")
             self.delete_all_input_files()
+            if message is not None:
+                self.delete(message['filenames'])
             #self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
@@ -450,11 +452,18 @@ class PromptServer():
         print("Function send message to BOT")
         print(f"BOT MESSAGE: {message}")
         # The address of bot's server
-        if (self.user_prompt_map[self.prompt_id]["server_id"] != None):
+        if (self.user_prompt_map[self.prompt_id]["server_id"] is not None):
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
             # Upload Files
-            self.upload_file(server_id, port, message)
+            result = self.upload_file(server_id, port, message)
+            if result:
+                print("Completed Task successfully with Bot Server")
+                self.shutdown(message)
+            else:
+                print("Error completing Task with Bot Server")
+                #self.shutdown(message)
+
 
     ## Delete Images from Server
     def delete_images(self, filenames: list):
@@ -537,7 +546,7 @@ class PromptServer():
             else:
                 if response.text == "Bot Done":
                     print(response.text)
-                    self.shutdown()
+                    return True
                 else:
                     print(f'Unexpected response from bot: {response.text}')
             
