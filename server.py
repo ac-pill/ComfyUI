@@ -441,7 +441,7 @@ class PromptServer():
             print(f"Shutdown Message: \nUsing pipe with id {id(self.pipe)} to send shutdown")
             self.delete_all_input_files()
             if message is not None:
-                self.delete(message['filenames'])
+                self.delete_images(message['filenames'])
             #self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
