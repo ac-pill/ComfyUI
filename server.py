@@ -443,7 +443,7 @@ class PromptServer():
             if message is not None:
                 self.delete_images(message['filenames'])
             time.sleep(10)
-            #self.pipe.send('shutdown')
+            self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
         return 

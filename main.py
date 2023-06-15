@@ -64,7 +64,6 @@ def start_server(args, child_conn, call_on_start=None):
         print("Error occurred:", e)
     finally:
         print("MAIN: Complete Task Loop")
-        time.sleep(30)
         #loop.close()
 
 def prompt_worker(q, server):
@@ -133,15 +132,7 @@ def main_func(args_dict, child_conn):
 
     print(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
 
-
     print("Starting asyncio event loop")
-    # if os.name == "nt":
-    #     try:
-    #         loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
-    #     except KeyboardInterrupt:
-    #         pass
-    # else:
-    #     loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
 
     call_on_start = None
     if args.auto_launch:
