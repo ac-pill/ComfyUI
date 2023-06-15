@@ -64,7 +64,8 @@ def start_server(args, child_conn, call_on_start=None):
     except Exception as e:
         print("Error occurred:", e)
     finally:
-        loop.close()
+        print("MAIN: Complete Task Loop")
+        #loop.close()
 
 def prompt_worker(q, server):
     e = execution.PromptExecutor(server)

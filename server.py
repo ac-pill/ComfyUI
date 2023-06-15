@@ -439,9 +439,8 @@ class PromptServer():
             # Send the 'shutdown' command through the pipe
             print("Shutdown Process")
             print(f"Shutdown Message: \nUsing pipe with id {id(self.pipe)} to send shutdown")
-            time.sleep(5)
             self.delete_all_input_files()
-            self.pipe.send('shutdown')
+            #self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
         return 
@@ -480,7 +479,7 @@ class PromptServer():
             except Exception as e:
                 print(f"Could not delete file {file_path}. Reason: {e}")
 
-    ## Upload files to Bot
+    ## Upload files to Bot Server / Task Server - To be converted to a webhook
     def upload_file(self, server_id, port, message):
         filenames = message['filenames']
         # Loop over all filenames and upload each file
@@ -538,7 +537,7 @@ class PromptServer():
             else:
                 if response.text == "Bot Done":
                     print(response.text)
-                    # self.shutdown()
+                    self.shutdown()
                 else:
                     print(f'Unexpected response from bot: {response.text}')
             
@@ -558,7 +557,6 @@ class PromptServer():
         return prompt_info
 
     async def send(self, event, data, sid=None):
-        print(f'')
         message = {"type": event, "data": data}
        
         if isinstance(message, str) == False:
