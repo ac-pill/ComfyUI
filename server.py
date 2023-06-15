@@ -455,18 +455,7 @@ class PromptServer():
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
             # Upload Files
-            self.upload_file(server_id, port, message["filenames"])
-            # Send Message to Bot
-            response = requests.post(f'{server_id}{port}/executed', json=message)
-            if response.status_code != 200:
-                print(f'Failed to send message to bot: {response.content}')
-                # Add log
-            else:
-                if response.text == "Bot Done":
-                    print(response.text)
-                    # self.shutdown()
-                else:
-                    print(f'Unexpected response from bot: {response.text}')
+            self.upload_file(server_id, port, message)
 
     ## Delete Images from Server
     def delete_images(self, filenames: list):
@@ -492,11 +481,10 @@ class PromptServer():
                 print(f"Could not delete file {file_path}. Reason: {e}")
 
     ## Upload files to Bot
-    def upload_file(self, server_id, port, filenames):
+    def upload_file(self, server_id, port, message):
+        filenames = message['filenames']
         # Loop over all filenames and upload each file
         output = folder_paths.get_output_directory()
-        url = f'{server_id}{port}/upload'  
-        print(f'>>>>URL: {url}')
         for filename in filenames:
             filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
             print(f'FILE NAME: {filepath}')
@@ -535,18 +523,25 @@ class PromptServer():
                 print(f"Unknown image mode for {filename}: {img.mode}")
                 continue 
 
-            print("here")
             url = f'{server_id}{port}/upload?filename={filename}' 
-            print(f'>>>>URL: {url}')
             headers = {'Content-Type': 'image/png', "Content-Disposition": f'attachment;filename={filename}'}
-            response = requests.post(url, data=data)
-
+            response = requests.post(url, headers=headers, data=data)
             if response.status_code != 200:
                 print(f'Failed to upload file {filename}: {response.content}')
             else:
                 print(f'Uploaded file {filename}: {response.content}')
-            while True:
-                time.sleep(10)
+            
+            response = requests.post(f'{server_id}{port}/executed', json=message)
+            if response.status_code != 200:
+                print(f'Failed to send message to bot: {response.content}')
+                # Add log
+            else:
+                if response.text == "Bot Done":
+                    print(response.text)
+                    # self.shutdown()
+                else:
+                    print(f'Unexpected response from bot: {response.text}')
+            
             
 
     def add_routes(self):
