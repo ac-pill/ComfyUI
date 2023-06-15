@@ -72,6 +72,7 @@ def parse_args(arg_dict=None):
     parser.add_argument("--disable-xformers", action="store_true", help="Disable xformers.")
 
     vram_group = parser.add_mutually_exclusive_group()
+    vram_group.add_argument("--gpu-only", action="store_true", help="Store and run everything (text encoders/CLIP models, etc... on the GPU).")
     vram_group.add_argument("--highvram", action="store_true", help="By default models will be unloaded to CPU memory after being used. This option keeps them in GPU memory.")
     vram_group.add_argument("--normalvram", action="store_true", help="Used to force normal vram use if lowvram gets automatically enabled.")
     vram_group.add_argument("--lowvram", action="store_true", help="Split the unet in parts to use less vram.")
