@@ -577,6 +577,7 @@ class PromptServer():
 
     def send_sync(self, event, data, sid=None):
         ## Edit on original send_sync
+        ## Error not all events are tracked
         print(f'EVENT: {event}')
         print(f'DATA: {data}')
         # Check if the event is 'executed' (i.e., a node has been executed)
@@ -605,8 +606,10 @@ class PromptServer():
             # This could be a POST request or Webhook
             self.send_message_to_bot(bot_message)
         elif 'value' in data:
+            print(f"Inside SEND SYNC: {data['value']} and MAX: {data['max']}")
             if (data['value'] == data['max']):
-                self.shutdown()
+                print("!!!!SHUTDOWN!!!!")
+                #self.shutdown()
         ## Edit on Original send_sync
 
         self.loop.call_soon_threadsafe(
