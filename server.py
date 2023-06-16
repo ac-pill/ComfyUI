@@ -446,10 +446,9 @@ class PromptServer():
         return 
        
     ## Send Executed Image to API
-    def send_message_to_bot(self, message, event, data):
+    def send_message_to_bot(self, message):
         print(f"Function send message to BOT\n Event: {event}")
         print(f"BOT MESSAGE: {message}")
-        print(f"DATA: {data}")
         # The address of bot's server
         if (self.user_prompt_map[self.prompt_id]["server_id"] is not None):
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
@@ -579,7 +578,7 @@ class PromptServer():
     def send_sync(self, event, data, sid=None):
         ## Edit on original send_sync
         print(event)
-        print(f'Prompt DATA: {data}')
+        print(f'DATA: {data}')
         # Check if the event is 'executed' (i.e., a node has been executed)
         if event == 'executed':
             # Extract the filenames from the data
