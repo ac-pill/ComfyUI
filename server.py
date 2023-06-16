@@ -442,7 +442,6 @@ class PromptServer():
             self.delete_all_input_files()
             if message is not None:
                 self.delete_images(message['filenames'])
-            time.sleep(10)
             self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
@@ -493,6 +492,7 @@ class PromptServer():
     def upload_file(self, server_id, port, message):
         filenames = message['filenames']
         # Loop over all filenames and upload each file
+        print(f'Filenames: {filenames}')
         output = folder_paths.get_output_directory()
         for filename in filenames:
             filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
