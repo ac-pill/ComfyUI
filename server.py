@@ -29,10 +29,18 @@ import comfy.model_management
 ## Using Requests for Now, replace later with aiohttp
 import requests
 import time
-from requests_toolbelt.multipart.encoder import MultipartEncoder
-from colorama import init
-from termcolor import colored
-init()
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
