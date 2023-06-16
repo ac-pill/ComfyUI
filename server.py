@@ -605,9 +605,7 @@ class PromptServer():
             print(f'BOT MESSAGE: {bot_message}')
             # This could be a POST request or Webhook
             self.send_message_to_bot(bot_message)
-        elif 'value' in data:
-            print(f"Inside SEND SYNC: {data['value']} and MAX: {data['max']}")
-            if (data['value'] == data['max']):
+        elif event == 'status':
                 print("!!!!SHUTDOWN!!!!")
                 #self.shutdown()
         ## Edit on Original send_sync
