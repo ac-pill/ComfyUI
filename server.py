@@ -80,6 +80,8 @@ class PromptServer():
         self.routes = routes
         self.last_node_id = None
         self.client_id = None
+        self.output_count = 1
+        self.current_output = 0
         self.user_prompt_map = {} ## To store USER related info
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
@@ -345,7 +347,7 @@ class PromptServer():
                 print(f'PROMPT to VALIDATE: {prompt}')
                 time.sleep(10)
                 valid = execution.validate_prompt(prompt)
-                print(f'Valid Prompt: {valid}')
+                print(colored(f'Prompt for API: {valid}', "green"))
                 extra_data = {}
                 if "extra_data" in json_data:
                     extra_data = json_data["extra_data"]
@@ -377,11 +379,13 @@ class PromptServer():
                         server_id = extra_data["server_id"]
                     if "port" in extra_data:
                         port = extra_data["port"]
+                    if "output_count" in extra_data:
+                        self.output_count = extra_data["output_count"]
                     self.user_prompt_map[prompt_id] = {
                             "user_id": user_id,
                             "channel_id": channel_id,
                             "server_id": server_id,
-                            "port": port,
+                            "port": port
                         }
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
@@ -608,7 +612,8 @@ class PromptServer():
             print(f'BOT MESSAGE: {bot_message}')
             # This could be a POST request or Webhook
             self.send_message_to_bot(bot_message)
-        elif event == 'status':
+            self.current_output += 1
+            if self.output_count == self.current_output:
                 print(colored("!!!!SHUTDOWN!!!!", "red"))
                 #self.shutdown()
         ## Edit on Original send_sync
