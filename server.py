@@ -26,10 +26,18 @@ import mimetypes
 ## Using Requests Temporarily, remove to use aiohttp
 import requests
 import time
-from requests_toolbelt.multipart.encoder import MultipartEncoder
-from colorama import init
-from termcolor import colored
-init()
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 
 @web.middleware
 async def cache_control(request: web.Request, handler):
@@ -347,7 +355,7 @@ class PromptServer():
                 print(f'PROMPT to VALIDATE: {prompt}')
                 time.sleep(10)
                 valid = execution.validate_prompt(prompt)
-                print(colored(f'Prompt for API: {valid}', "green"))
+                print(f'{bcolors.OKGREEN}Prompt for API: {valid}{bcolors.ENDC}')
                 extra_data = {}
                 if "extra_data" in json_data:
                     extra_data = json_data["extra_data"]
@@ -614,7 +622,7 @@ class PromptServer():
             self.send_message_to_bot(bot_message)
             self.current_output += 1
             if self.output_count == self.current_output:
-                print(colored("!!!!SHUTDOWN!!!!", "red"))
+                print(f'{bcolors.WARNING}!!!!SHUTDOWN!!!!{bcolors.ENDC}')
                 #self.shutdown()
         ## Edit on Original send_sync
 
