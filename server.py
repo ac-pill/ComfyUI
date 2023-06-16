@@ -30,6 +30,9 @@ import comfy.model_management
 import requests
 import time
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+from colorama import init
+from termcolor import colored
+init()
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
