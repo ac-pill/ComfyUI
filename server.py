@@ -448,8 +448,8 @@ class PromptServer():
         return 
        
     ## Send Executed Image to API
-    def send_message_to_bot(self, message):
-        print("Function send message to BOT")
+    def send_message_to_bot(self, message, event, data):
+        print(f"Function send message to BOT\n Event: {event}")
         print(f"BOT MESSAGE: {message}")
         # The address of bot's server
         if (self.user_prompt_map[self.prompt_id]["server_id"] is not None):
@@ -457,10 +457,10 @@ class PromptServer():
             port = self.user_prompt_map[self.prompt_id]["port"]
             # Upload Files
             result = self.upload_file(server_id, port, message)
-            if result:
+            if result and (data['value'] == data['max']):
                 print("Completed Task successfully with Bot Server")
                 self.shutdown(message)
-            else:
+            elif result and (data['value'] == data['max']):
                 print("Error completing Task with Bot Server")
                 self.shutdown(message)
 
@@ -606,7 +606,7 @@ class PromptServer():
             }
             print(f'BOT MESSAGE: {bot_message}')
             # This could be a POST request or Webhook
-            self.send_message_to_bot(bot_message)
+            self.send_message_to_bot(bot_message, event, data)
         ## Edit on Original send_sync
 
         self.loop.call_soon_threadsafe(
