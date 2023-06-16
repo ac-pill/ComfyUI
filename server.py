@@ -29,7 +29,7 @@ import comfy.model_management
 ## Using Requests for Now, replace later with aiohttp
 import requests
 import time
-from termcolor import colored
+
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
