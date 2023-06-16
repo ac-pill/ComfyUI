@@ -27,6 +27,9 @@ import mimetypes
 import requests
 import time
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+from colorama import init
+from termcolor import colored
+init()
 
 @web.middleware
 async def cache_control(request: web.Request, handler):
@@ -606,7 +609,7 @@ class PromptServer():
             # This could be a POST request or Webhook
             self.send_message_to_bot(bot_message)
         elif event == 'status':
-                print("!!!!SHUTDOWN!!!!")
+                print(colored("!!!!SHUTDOWN!!!!", "red"))
                 #self.shutdown()
         ## Edit on Original send_sync
 
