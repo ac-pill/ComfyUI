@@ -440,8 +440,6 @@ class PromptServer():
             print("Shutdown Process")
             print(f"Shutdown Message: \nUsing pipe with id {id(self.pipe)} to send shutdown")
             self.delete_all_input_files()
-            if message is not None:
-                self.delete_images(message['filenames'])
             self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
@@ -451,19 +449,19 @@ class PromptServer():
     def send_message_to_bot(self, message, event, data):
         print(f"Function send message to BOT\n Event: {event}")
         print(f"BOT MESSAGE: {message}")
+        print(f"DATA: {data}")
         # The address of bot's server
         if (self.user_prompt_map[self.prompt_id]["server_id"] is not None):
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
             # Upload Files
             result = self.upload_file(server_id, port, message)
-            if result and (data['value'] == data['max']):
+            if result:
                 print("Completed Task successfully with Bot Server")
-                self.shutdown(message)
-            elif result and (data['value'] == data['max']):
+                self.delete_images(message['filenames'])
+            else:
                 print("Error completing Task with Bot Server")
-                self.shutdown(message)
-
+                self.delete_images(message['filenames'])
 
     ## Delete Images from Server
     def delete_images(self, filenames: list):
@@ -606,7 +604,10 @@ class PromptServer():
             }
             print(f'BOT MESSAGE: {bot_message}')
             # This could be a POST request or Webhook
-            self.send_message_to_bot(bot_message, event, data)
+            self.send_message_to_bot(bot_message)
+        elif 'value' in data:
+            if (data['value'] == data['max']):
+                self.shutdown()
         ## Edit on Original send_sync
 
         self.loop.call_soon_threadsafe(
