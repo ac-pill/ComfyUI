@@ -584,6 +584,8 @@ class PromptServer():
         ## Error not all events are tracked
         print(f'EVENT: {event}')
         print(f'DATA: {data}')
+        # Get the prompt_id
+        prompt_id = self.prompt_id
         # Check if the event is 'executed' (i.e., a node has been executed)
         if event == 'executed':
             # Extract the filenames from the data
@@ -594,11 +596,8 @@ class PromptServer():
                         filenames.append(image['filename'])
             # Include the filenames in the data
             data['filenames'] = filenames
-            print(f'data: {data}')
             print(f'filenames: {data["filenames"]}')
             print(f'prompt_id: {self.prompt_id}')
-            # Get the prompt_id
-            prompt_id = self.prompt_id
             # Send message to bot
             bot_message = {
                 "prompt_id": data['prompt_id'],
