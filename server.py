@@ -610,6 +610,7 @@ class PromptServer():
             # This could be a POST request or Webhook
             self.send_message_to_bot(bot_message)
             self.current_output += 1
+        elif event == 'executing':
             if data['node'] is None and data['prompt_id'] == prompt_id:
                 print(f'!!!!SHUTDOWN With Data info!!!!')
                 self.shutdown()                
