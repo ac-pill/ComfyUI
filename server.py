@@ -610,9 +610,12 @@ class PromptServer():
             # This could be a POST request or Webhook
             self.send_message_to_bot(bot_message)
             self.current_output += 1
-            if self.output_count == self.current_output:
-                print(f'!!!!SHUTDOWN!!!!')
-                self.shutdown()
+            if data['node'] is None and data['prompt_id'] == prompt_id:
+                print(f'!!!!SHUTDOWN With Data info!!!!')
+                self.shutdown()                
+            # if self.output_count == self.current_output:
+            #     print(f'!!!!SHUTDOWN!!!!')
+            #     self.shutdown()
         ## Edit on Original send_sync
 
         self.loop.call_soon_threadsafe(
