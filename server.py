@@ -586,7 +586,7 @@ class PromptServer():
         if event == 'executed':
             # Extract the filenames from the data
             filenames = []
-            if 'output' in data and 'images' in data['output'] and data['output']['images']['type'] == 'output':
+            if 'output' in data and 'images' in data['output'] and data['output']['images'][0]['type'] == 'output':
                 for image in data['output']['images']:
                     if 'filename' in image:
                         filenames.append(image['filename'])
