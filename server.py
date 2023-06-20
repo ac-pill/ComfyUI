@@ -590,20 +590,20 @@ class PromptServer():
                 for image in data['output']['images']:
                     if 'filename' in image:
                         filenames.append(image['filename'])
-            # Include the filenames in the data
-            data['filenames'] = filenames
-            print(f'filenames: {data["filenames"]}')
-            print(f'prompt_id: {self.prompt_id}')
-            # Send message to bot
-            bot_message = {
-                "prompt_id": data['prompt_id'],
-                "user_id": self.user_prompt_map[prompt_id]["user_id"],
-                "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
-                "filenames": data['filenames']
-            }
-            print(f'BOT MESSAGE: {bot_message}')
-            # This could be a POST request or Webhook
-            self.send_message_to_bot(bot_message)
+                # Include the filenames in the data
+                data['filenames'] = filenames
+                print(f'filenames: {data["filenames"]}')
+                print(f'prompt_id: {self.prompt_id}')
+                # Send message to bot
+                bot_message = {
+                    "prompt_id": data['prompt_id'],
+                    "user_id": self.user_prompt_map[prompt_id]["user_id"],
+                    "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
+                    "filenames": data['filenames']
+                }
+                print(f'BOT MESSAGE: {bot_message}')
+                # This could be a POST request or Webhook
+                self.send_message_to_bot(bot_message)
         elif event == 'executing':
             if data['node'] is None and data['prompt_id'] == prompt_id:
                 print(f'!!!!SHUTDOWN With Data info!!!!')
