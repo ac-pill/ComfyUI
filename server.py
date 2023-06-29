@@ -546,10 +546,10 @@ class PromptServer():
             print("Shutdown Process")
             print(f"Shutdown Message: \nUsing pipe with id {id(self.pipe)} to send shutdown")
             self.delete_all_input_files()
-            #self.pipe.send('shutdown')
+            self.pipe.send('shutdown')
         else:
             print("Cannot shutdown because the pipe is not connected.")
-        return 
+        return
        
     ## Send Executed Image to API
     def send_message_to_bot(self, message):
