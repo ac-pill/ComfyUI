@@ -5,22 +5,17 @@ import shutil
 import threading
 import gc
 import time
-## Adding to main.py
-import json
-import sys
-
-from concurrent.futures import ThreadPoolExecutor
 
 from comfy.cli_args import init_args # Args set
-
-from multiprocessing import Pipe
-parent_conn, child_conn = Pipe()
-from comfy.cli_args import set_args
-# global variables
-args = None  # global variable to store arguments
-## Adding to main.py
-
 import comfy.utils
+
+## Start of Edit Block 1 ##
+
+import json
+import sys
+from concurrent.futures import ThreadPoolExecutor
+
+## End of Edit Block 1 ##
 
 if os.name == "nt":
     import logging
@@ -34,6 +29,8 @@ import server
 from server import BinaryEventTypes
 from nodes import init_custom_nodes
 import comfy.model_management
+
+## Start of Edit Block 2 ##
 print("LOADING MAIN.PY - V08")
 
 def start_server(args, child_conn, call_on_start=None):
@@ -71,7 +68,8 @@ def start_server(args, child_conn, call_on_start=None):
         print("Error occurred:", e)
     finally:
         print("MAIN: Complete Task Loop")
-        #loop.close()
+
+## End of Edit Block 2 ##
 
 def prompt_worker(q, server):
     e = execution.PromptExecutor(server)
@@ -97,7 +95,6 @@ def hijack_progress(server):
         server.send_sync("progress", {"value": value, "max": total}, server.client_id)
         if preview_image_bytes is not None:
             server.send_sync(BinaryEventTypes.PREVIEW_IMAGE, preview_image_bytes, server.client_id)
-        print(f'MAIN DATA: VALUE:{value} >> MAX: {total}') ## Print Progress
     comfy.utils.set_progress_bar_global_hook(hook)
 
 
@@ -127,6 +124,7 @@ def load_extra_path_config(yaml_path):
                 print("Adding extra search path", x, full_path)
                 folder_paths.add_model_folder_path(x, full_path)
 
+
 def main_func(args_dict, child_conn):
 
     cleanup_temp()
@@ -134,59 +132,25 @@ def main_func(args_dict, child_conn):
     print("Starting Server")
     print(f'Args from shared.py:{args_dict}')
     args = init_args(args_dict)
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    prompt_server = server.PromptServer(loop)
-    q = execution.PromptQueue(server)
 
     print(f'DONT UPCAST: {args.dont_upcast_attention}')
 
-    set_args(args)
+    # For debugging temp args JSON File
+    with open("temp_args.json", 'r') as f:
+        this = json.load(f)
+    print(f'JSON FILE CONTAINER:{this}')
 
     if args.dont_upcast_attention:
         print("disabling upcasting of attention")
         os.environ['ATTN_PRECISION'] = "fp16"
-    
-    init_custom_nodes()
-    prompt_server.add_routes()
-    hijack_progress(prompt_server)
 
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         print("Set cuda device to:", args.cuda_device)
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    prompt_server = server.PromptServer(loop, child_conn) # Changing here for adding pipe communication
-    q = execution.PromptQueue(server)
+    print(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
 
-    loop = asyncio.get_event_loop()
-    # asyncio.set_event_loop(loop)
-    prompt_server = server.PromptServer(loop, args, child_conn) # Changing here for adding pipe communication
-    q = execution.PromptQueue(prompt_server)
-
-    extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
-    if os.path.isfile(extra_model_paths_config_path):
-        load_extra_path_config(extra_model_paths_config_path)
-
-    if args.extra_model_paths_config:
-        for config_path in itertools.chain(*args.extra_model_paths_config):
-            load_extra_path_config(config_path)
-
-    init_custom_nodes()
-    prompt_server.add_routes() # Changing name for clarity
-    hijack_progress(prompt_server) # Changing name for clarity
-
-    print("Starting prompt_worker thread")
-    threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
-
-    if args.output_directory:
-        output_dir = os.path.abspath(args.output_directory)
-        print(f"Setting output directory to: {output_dir}")
-        folder_paths.set_output_directory(output_dir)
-
-    if args.quick_test_for_ci:
-        exit(0)
+    print("Starting asyncio event loop")
 
     call_on_start = None
     if args.auto_launch:
@@ -197,14 +161,6 @@ def main_func(args_dict, child_conn):
 
     executor = ThreadPoolExecutor(max_workers=1)
     future = executor.submit(start_server, args, child_conn, call_on_start)
-    if os.name == "nt":
-        try:
-            await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start) # Changing here for clarity
-        except KeyboardInterrupt:
-            pass
-    else:
-        loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)) # Changing here for clarity
-        print("Server is listening on port 3000")
 
     cleanup_temp()
 

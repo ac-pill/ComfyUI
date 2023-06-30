@@ -65,7 +65,7 @@ def create_cors_middleware(allowed_origin: str):
     return cors_middleware
 
 class PromptServer():
-    def __init__(self, loop, pipe=None):
+    def __init__(self, loop, args, pipe=None):
         PromptServer.instance = self
 
         mimetypes.init()
@@ -92,7 +92,8 @@ class PromptServer():
         self.user_prompt_map = {} ## To store USER related info
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
-        self.pipe = pipe
+        self.pipe = pipe ## Hold Server state for Parent Process
+
         @routes.get('/ws')
         async def websocket_handler(request):
             ws = web.WebSocketResponse()
@@ -431,6 +432,7 @@ class PromptServer():
             json_data =  await request.json()
 
             print(f"POST Prompt Received: \n {json_data}") # Remove
+
             if "number" in json_data:
                 number = float(json_data['number'])
             else:
@@ -444,7 +446,6 @@ class PromptServer():
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
                 print(f'PROMPT to VALIDATE: {prompt}')
-                time.sleep(10)
                 valid = execution.validate_prompt(prompt)
                 print(f'Prompt for API: {valid}')
                 extra_data = {}
@@ -461,15 +462,12 @@ class PromptServer():
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
                     outputs_to_execute = valid[2]
-                    self.prompt_id = prompt_id
                     ### User ID added on client side if using API ###
                     user_id = None  
                     channel_id = None
                     server_id = None
                     port = None
                     self.prompt_id = prompt_id
-                    user_id = None  
-                    channel_id = None
                     print(f'EXTRA DATA: {extra_data}')
                     if "user_id" in extra_data:
                         user_id = extra_data["user_id"]
@@ -489,7 +487,6 @@ class PromptServer():
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     ## User ID added on client side if using API ###
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
-                    print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     return web.json_response({"prompt_id": prompt_id, "number": number})
                 else:
                     print("invalid prompt:", valid[1])
@@ -560,18 +557,13 @@ class PromptServer():
             server_id = self.user_prompt_map[self.prompt_id]["server_id"]
             port = self.user_prompt_map[self.prompt_id]["port"]
             # Upload Files
-            self.upload_file(server_id, port, message["filenames"])
-            # Send Message to Bot
-            response = requests.post(f'{server_id}{port}/executed', json=message)
-            if response.status_code != 200:
-                print(f'Failed to send message to bot: {response.content}')
-                # Add log
+            result = self.upload_file(server_id, port, message)
+            if result:
+                print("Completed Task successfully with Bot Server")
+                self.delete_images(message['filenames'])
             else:
-                if response.text == "Bot Done":
-                    print(response.text)
-                    self.shutdown()
-                else:
-                    print(f'Unexpected response from bot: {response.text}')
+                print("Error completing Task with Bot Server")
+                self.delete_images(message['filenames'])
 
     ## Delete Images from Server
     def delete_images(self, filenames: list):
@@ -655,11 +647,10 @@ class PromptServer():
             else:
                 if response.text == "Bot Done":
                     print(response.text)
-                    self.shutdown()
+                    return True
                 else:
                     print(f'Unexpected response from bot: {response.text}')
-            
-            
+
 
     def add_routes(self):
         self.app.add_routes(self.routes)
