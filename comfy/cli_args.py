@@ -99,7 +99,7 @@ def parse_args(arg_dict=None):
 
     # save args to a json file
     with open(JSON_FILE_PATH, 'w') as f:
-        json.dump(vars(args_to_json), f)
+        json.dump(args_to_json, f)
         
     return args
 
