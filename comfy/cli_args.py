@@ -94,9 +94,12 @@ def parse_args(arg_dict=None):
     if args.windows_standalone_build:
         args.auto_launch = True
 
+    args_to_json = vars(args)
+    args_to_json["preview_method"] = args_to_json["preview_method"].value
+
     # save args to a json file
     with open(JSON_FILE_PATH, 'w') as f:
-        json.dump(vars(args), f)
+        json.dump(vars(args_to_json), f)
         
     return args
 
@@ -113,6 +116,7 @@ class Arguments:
             try:
                 with open(JSON_FILE_PATH, 'r') as f:
                     arg_dict = json.load(f)
+                arg_dict["preview_method"] = LatentPreviewMethod(arg_dict["preview_method"])
                 self._args = argparse.Namespace(**arg_dict)
             except FileNotFoundError:
                 print(f'Error: {JSON_FILE_PATH} not found')
