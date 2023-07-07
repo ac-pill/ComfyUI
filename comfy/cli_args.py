@@ -110,14 +110,14 @@ class Arguments:
     def init_args(self, args_input=None):
         if isinstance(args_input, dict):
             # process dictionary input
-            self._args = self.parse_args(args_input)
+            self._args = parse_args(args_input)
         elif isinstance(args_input, list):
             # process list input
             args_dict = {k.lstrip('-'): v for k, v in zip(args_input[::2], args_input[1::2])}
-            self._args = self.parse_args(args_dict)
+            self._args = parse_args(args_dict)
         elif args_input is None:
             # get default arguments
-            self._args = self.parse_args()
+            self._args = parse_args()
         else:
             # process command line input
             self._args = self.parse_args(vars(argparse.Namespace(**{k: v for k, v in map(lambda x: x.split('='), args_input)})))
