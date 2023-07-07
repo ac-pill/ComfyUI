@@ -6,7 +6,7 @@ import threading
 import gc
 import time
 
-from comfy.cli_args import init_args # Args set
+from comfy.cli_args import Arguments
 import comfy.utils
 
 ## Start of Edit Block 1 ##
@@ -130,8 +130,17 @@ def main_func(args_dict, child_conn):
     cleanup_temp()
 
     print("Starting Server")
-    print(f'Args from shared.py:{args_dict}')
-    args = init_args(args_dict)
+
+    args_class = Arguments()
+
+    ## Check if instance or command line
+    if isinstance(args_dict, dict):
+        print(f'Args from shared.py:{args_dict}')
+        args = args_class.init_args(args_dict)
+    else: # assuming list of strings
+        print(f'Args from command line:{args_dict}')
+        args = args_class.init_args()
+        # Note: you'll need to modify init_args function to take command line arguments
 
     print(f'DONT UPCAST: {args.dont_upcast_attention}')
 

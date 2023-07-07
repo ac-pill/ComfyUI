@@ -107,6 +107,16 @@ class Arguments:
     def __init__(self):
         self._args = parse_args()
 
+    def init_args(self, args_input=None):
+        if isinstance(args_input, dict):
+            # process dictionary input
+            self._args = self.parse_args(args_input)
+        else:
+            # process command line input
+            # assuming args_input is a list of strings
+            self._args = self.parse_args(vars(argparse.Namespace(**{k: v for k, v in map(lambda x: x.split('='), args_input)})))
+        return self._args
+
     def set_args(self, arg_dict):
         self._args = parse_args(arg_dict)
 
