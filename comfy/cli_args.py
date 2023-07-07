@@ -111,14 +111,16 @@ class Arguments:
         if isinstance(args_input, dict):
             # process dictionary input
             self._args = self.parse_args(args_input)
+        elif isinstance(args_input, list):
+            # process list input
+            args_dict = {k.lstrip('-'): v for k, v in zip(args_input[::2], args_input[1::2])}
+            self._args = self.parse_args(args_dict)
+        elif args_input is None:
+            # get default arguments
+            self._args = self.parse_args()
         else:
             # process command line input
-            # assuming args_input is a list of strings
-            if args_input and all(arg.startswith('--') for arg in args_input[::2]):  # Check if args_input looks like ['--listen', '--port', '3000']
-                args_input = {k.lstrip('-'): v for k, v in zip(args_input[::2], args_input[1::2])}  # Convert to dictionary
-            elif args_input:  # Otherwise, assume args_input looks like ['listen=127.0.0.1', 'port=3000']
-                args_input = {k: v for k, v in map(lambda x: x.split('='), args_input)}
-            self._args = self.parse_args(args_input)
+            self._args = self.parse_args(vars(argparse.Namespace(**{k: v for k, v in map(lambda x: x.split('='), args_input)})))
         return self._args
 
     def set_args(self, arg_dict):
