@@ -165,4 +165,4 @@ def main_func(args_dict, child_conn):
     cleanup_temp()
 
 if __name__ == "__main__":
-    main_func(sys.argv[1:])
+    main_func(sys.argv[1:], None)
