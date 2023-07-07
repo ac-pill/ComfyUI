@@ -125,7 +125,7 @@ def load_extra_path_config(yaml_path):
                 folder_paths.add_model_folder_path(x, full_path)
 
 
-def main_func(args_dict=None, child_conn=None):
+def main_func(args_dict, child_conn=None):
 
     cleanup_temp()
 
