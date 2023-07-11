@@ -31,11 +31,14 @@ from nodes import init_custom_nodes
 import comfy.model_management
 
 ## Start of Edit Block 2 ##
+args = None
 print("LOADING MAIN.PY - V08")
 
 def start_server(child_conn, call_on_start=None):
+    print("now here")
     global args
-    
+    print(args)
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     prompt_server = server.PromptServer(loop, child_conn) # Changing here for adding pipe communication
@@ -176,6 +179,7 @@ def main_func(args_dict, child_conn=None, cmdline=False):
         executor = ThreadPoolExecutor(max_workers=1)
         future = executor.submit(start_server, child_conn, call_on_start=call_on_start)
     else:
+        print("here")
         start_server(child_conn, call_on_start=call_on_start)
 
     cleanup_temp()
