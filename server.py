@@ -65,7 +65,7 @@ def create_cors_middleware(allowed_origin: str):
     return cors_middleware
 
 class PromptServer():
-    def __init__(self, loop, args, pipe=None):
+    def __init__(self, loop, pipe=None):
         PromptServer.instance = self
 
         mimetypes.init()

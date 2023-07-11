@@ -33,10 +33,12 @@ import comfy.model_management
 ## Start of Edit Block 2 ##
 print("LOADING MAIN.PY - V08")
 
-def start_server(args, child_conn, call_on_start=None):
+def start_server(child_conn, call_on_start=None):
+    global args
+    
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    prompt_server = server.PromptServer(loop, args, child_conn) # Changing here for adding pipe communication
+    prompt_server = server.PromptServer(loop, child_conn) # Changing here for adding pipe communication
     q = execution.PromptQueue(prompt_server)
 
     extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
@@ -133,6 +135,8 @@ def main_func(args_dict, child_conn=None, cmdline=False):
 
     args_class = Arguments()
 
+    global args
+
     ## Check if instance or command line
     if isinstance(args_dict, dict):
         print(f'Args from shared.py:{args_dict}')
@@ -170,9 +174,9 @@ def main_func(args_dict, child_conn=None, cmdline=False):
 
     if cmdline:
         executor = ThreadPoolExecutor(max_workers=1)
-        future = executor.submit(start_server, args, child_conn, call_on_start=call_on_start)
+        future = executor.submit(start_server, child_conn, call_on_start=call_on_start)
     else:
-        start_server(args, child_conn, call_on_start=call_on_start)
+        start_server(child_conn, call_on_start=call_on_start)
 
     cleanup_temp()
 
