@@ -176,11 +176,12 @@ def main_func(args_dict, child_conn=None, cmdline=False):
         call_on_start = startup_server
 
     if cmdline:
-        executor = ThreadPoolExecutor(max_workers=1)
-        future = executor.submit(start_server, child_conn, call_on_start=call_on_start)
-    else:
         print("here")
         start_server(child_conn, call_on_start=call_on_start)
+        
+    else:
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(start_server, child_conn, call_on_start=call_on_start)
 
     cleanup_temp()
 
