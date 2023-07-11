@@ -125,7 +125,7 @@ def load_extra_path_config(yaml_path):
                 folder_paths.add_model_folder_path(x, full_path)
 
 
-def main_func(args_dict, child_conn=None):
+def main_func(args_dict, child_conn=None, cmdline=False):
 
     cleanup_temp()
 
@@ -168,10 +168,13 @@ def main_func(args_dict, child_conn=None):
             webbrowser.open(f"http://{address}:{port}")
         call_on_start = startup_server
 
-    executor = ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(start_server, args, child_conn, call_on_start)
+    if cmdline:
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(start_server, args, child_conn, call_on_start=call_on_start)
+    else:
+        start_server(args, child_conn, call_on_start=call_on_start)
 
     cleanup_temp()
 
 if __name__ == "__main__":
-    main_func(sys.argv[1:])
+    main_func(sys.argv[1:], cmdline=True)
