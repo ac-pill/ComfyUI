@@ -505,7 +505,6 @@ class PromptServer():
                         "prompt_id": self.prompt_id,
                         "user_id": user_id,
                         "channel_id": channel_id,
-                        "filenames": "None",
                         "message": message
                     }
                     print(f'BOT MESSAGE: {bot_message}')
@@ -521,7 +520,6 @@ class PromptServer():
                     "prompt_id": self.prompt_id,
                     "user_id": user_id,
                     "channel_id": channel_id,
-                    "filenames": "None",
                     "message": message
                 }
                 print(f'BOT MESSAGE: {bot_message}')
