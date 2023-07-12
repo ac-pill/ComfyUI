@@ -59,38 +59,8 @@ LORA_CLIP_MAP = {
     "self_attn.out_proj": "self_attn_out_proj",
 }
 
-LORA_UNET_MAP_ATTENTIONS = {
-    "proj_in": "proj_in",
-    "proj_out": "proj_out",
-}
 
-transformer_lora_blocks = {
-    "transformer_blocks.{}.attn1.to_q": "transformer_blocks_{}_attn1_to_q",
-    "transformer_blocks.{}.attn1.to_k": "transformer_blocks_{}_attn1_to_k",
-    "transformer_blocks.{}.attn1.to_v": "transformer_blocks_{}_attn1_to_v",
-    "transformer_blocks.{}.attn1.to_out.0": "transformer_blocks_{}_attn1_to_out_0",
-    "transformer_blocks.{}.attn2.to_q": "transformer_blocks_{}_attn2_to_q",
-    "transformer_blocks.{}.attn2.to_k": "transformer_blocks_{}_attn2_to_k",
-    "transformer_blocks.{}.attn2.to_v": "transformer_blocks_{}_attn2_to_v",
-    "transformer_blocks.{}.attn2.to_out.0": "transformer_blocks_{}_attn2_to_out_0",
-    "transformer_blocks.{}.ff.net.0.proj": "transformer_blocks_{}_ff_net_0_proj",
-    "transformer_blocks.{}.ff.net.2": "transformer_blocks_{}_ff_net_2",
-}
-
-for i in range(10):
-    for k in transformer_lora_blocks:
-        LORA_UNET_MAP_ATTENTIONS[k.format(i)] = transformer_lora_blocks[k].format(i)
-
-
-LORA_UNET_MAP_RESNET = {
-    "in_layers.2": "resnets_{}_conv1",
-    "emb_layers.1": "resnets_{}_time_emb_proj",
-    "out_layers.3": "resnets_{}_conv2",
-    "skip_connection": "resnets_{}_conv_shortcut"
-}
-
-def load_lora(path, to_load):
-    lora = utils.load_torch_file(path, safe_load=True)
+def load_lora(lora, to_load):
     patch_dict = {}
     loaded_keys = set()
     for x in to_load:
@@ -189,39 +159,9 @@ def load_lora(path, to_load):
             print("lora key not loaded", x)
     return patch_dict
 
-def model_lora_keys(model, key_map={}):
+def model_lora_keys_clip(model, key_map={}):
     sdk = model.state_dict().keys()
 
-    counter = 0
-    for b in range(12):
-        tk = "diffusion_model.input_blocks.{}.1".format(b)
-        up_counter = 0
-        for c in LORA_UNET_MAP_ATTENTIONS:
-            k = "{}.{}.weight".format(tk, c)
-            if k in sdk:
-                lora_key = "lora_unet_down_blocks_{}_attentions_{}_{}".format(counter // 2, counter % 2, LORA_UNET_MAP_ATTENTIONS[c])
-                key_map[lora_key] = k
-                up_counter += 1
-        if up_counter >= 4:
-            counter += 1
-    for c in LORA_UNET_MAP_ATTENTIONS:
-        k = "diffusion_model.middle_block.1.{}.weight".format(c)
-        if k in sdk:
-            lora_key = "lora_unet_mid_block_attentions_0_{}".format(LORA_UNET_MAP_ATTENTIONS[c])
-            key_map[lora_key] = k
-    counter = 3
-    for b in range(12):
-        tk = "diffusion_model.output_blocks.{}.1".format(b)
-        up_counter = 0
-        for c in LORA_UNET_MAP_ATTENTIONS:
-            k = "{}.{}.weight".format(tk, c)
-            if k in sdk:
-                lora_key = "lora_unet_up_blocks_{}_attentions_{}_{}".format(counter // 3, counter % 3, LORA_UNET_MAP_ATTENTIONS[c])
-                key_map[lora_key] = k
-                up_counter += 1
-        if up_counter >= 4:
-            counter += 1
-    counter = 0
     text_model_lora_key = "lora_te_text_model_encoder_layers_{}_{}"
     clip_l_present = False
     for b in range(32):
@@ -245,77 +185,34 @@ def model_lora_keys(model, key_map={}):
                     lora_key = "lora_te_text_model_encoder_layers_{}_{}".format(b, LORA_CLIP_MAP[c]) #TODO: test if this is correct for SDXL-Refiner
                 key_map[lora_key] = k
 
+    return key_map
 
-    #Locon stuff
-    ds_counter = 0
-    counter = 0
-    for b in range(12):
-        tk = "diffusion_model.input_blocks.{}.0".format(b)
-        key_in = False
-        for c in LORA_UNET_MAP_RESNET:
-            k = "{}.{}.weight".format(tk, c)
-            if k in sdk:
-                lora_key = "lora_unet_down_blocks_{}_{}".format(counter // 2, LORA_UNET_MAP_RESNET[c].format(counter % 2))
-                key_map[lora_key] = k
-                key_in = True
-        for bb in range(3):
-            k = "{}.{}.op.weight".format(tk[:-2], bb)
-            if k in sdk:
-                lora_key = "lora_unet_down_blocks_{}_downsamplers_0_conv".format(ds_counter)
-                key_map[lora_key] = k
-                ds_counter += 1
-        if key_in:
-            counter += 1
-
-    counter = 0
-    for b in range(3):
-        tk = "diffusion_model.middle_block.{}".format(b)
-        key_in = False
-        for c in LORA_UNET_MAP_RESNET:
-            k = "{}.{}.weight".format(tk, c)
-            if k in sdk:
-                lora_key = "lora_unet_mid_block_{}".format(LORA_UNET_MAP_RESNET[c].format(counter))
-                key_map[lora_key] = k
-                key_in = True
-        if key_in:
-            counter += 1
-
-    counter = 0
-    us_counter = 0
-    for b in range(12):
-        tk = "diffusion_model.output_blocks.{}.0".format(b)
-        key_in = False
-        for c in LORA_UNET_MAP_RESNET:
-            k = "{}.{}.weight".format(tk, c)
-            if k in sdk:
-                lora_key = "lora_unet_up_blocks_{}_{}".format(counter // 3, LORA_UNET_MAP_RESNET[c].format(counter % 3))
-                key_map[lora_key] = k
-                key_in = True
-        for bb in range(3):
-            k = "{}.{}.conv.weight".format(tk[:-2], bb)
-            if k in sdk:
-                lora_key = "lora_unet_up_blocks_{}_upsamplers_0_conv".format(us_counter)
-                key_map[lora_key] = k
-                us_counter += 1
-        if key_in:
-            counter += 1
+def model_lora_keys_unet(model, key_map={}):
+    sdk = model.state_dict().keys()
 
     for k in sdk:
         if k.startswith("diffusion_model.") and k.endswith(".weight"):
             key_lora = k[len("diffusion_model."):-len(".weight")].replace(".", "_")
             key_map["lora_unet_{}".format(key_lora)] = k
 
+    diffusers_keys = utils.unet_to_diffusers(model.model_config.unet_config)
+    for k in diffusers_keys:
+        if k.endswith(".weight"):
+            key_lora = k[:-len(".weight")].replace(".", "_")
+            key_map["lora_unet_{}".format(key_lora)] = "diffusion_model.{}".format(diffusers_keys[k])
     return key_map
 
 
 class ModelPatcher:
-    def __init__(self, model, size=0):
+    def __init__(self, model, load_device, offload_device, size=0):
         self.size = size
         self.model = model
-        self.patches = []
+        self.patches = {}
         self.backup = {}
         self.model_options = {"transformer_options":{}}
         self.model_size()
+        self.load_device = load_device
+        self.offload_device = offload_device
 
     def model_size(self):
         if self.size > 0:
@@ -330,8 +227,11 @@ class ModelPatcher:
         return size
 
     def clone(self):
-        n = ModelPatcher(self.model, self.size)
-        n.patches = self.patches[:]
+        n = ModelPatcher(self.model, self.load_device, self.offload_device, self.size)
+        n.patches = {}
+        for k in self.patches:
+            n.patches[k] = self.patches[k][:]
+
         n.model_options = copy.deepcopy(self.model_options)
         n.model_keys = self.model_keys
         return n
@@ -341,6 +241,9 @@ class ModelPatcher:
             self.model_options["sampler_cfg_function"] = lambda args: sampler_cfg_function(args["cond"], args["uncond"], args["cond_scale"]) #Old way
         else:
             self.model_options["sampler_cfg_function"] = sampler_cfg_function
+
+    def set_model_unet_function_wrapper(self, unet_wrapper_function):
+        self.model_options["model_function_wrapper"] = unet_wrapper_function
 
     def set_model_patch(self, patch, name):
         to = self.model_options["transformer_options"]
@@ -392,15 +295,41 @@ class ModelPatcher:
                         patch_list[k] = patch_list[k].to(device)
 
     def model_dtype(self):
-        return self.model.get_dtype()
+        if hasattr(self.model, "get_dtype"):
+            return self.model.get_dtype()
 
     def add_patches(self, patches, strength_patch=1.0, strength_model=1.0):
-        p = {}
+        p = set()
         for k in patches:
             if k in self.model_keys:
-                p[k] = patches[k]
-        self.patches += [(strength_patch, p, strength_model)]
-        return p.keys()
+                p.add(k)
+                current_patches = self.patches.get(k, [])
+                current_patches.append((strength_patch, patches[k], strength_model))
+                self.patches[k] = current_patches
+
+        return list(p)
+
+    def get_key_patches(self, filter_prefix=None):
+        model_sd = self.model_state_dict()
+        p = {}
+        for k in model_sd:
+            if filter_prefix is not None:
+                if not k.startswith(filter_prefix):
+                    continue
+            if k in self.patches:
+                p[k] = [model_sd[k]] + self.patches[k]
+            else:
+                p[k] = (model_sd[k],)
+        return p
+
+    def model_state_dict(self, filter_prefix=None):
+        sd = self.model.state_dict()
+        keys = list(sd.keys())
+        if filter_prefix is not None:
+            for k in keys:
+                if not k.startswith(filter_prefix):
+                    sd.pop(k)
+        return sd
 
     def model_state_dict(self, filter_prefix=None):
         sd = self.model.state_dict()
@@ -413,85 +342,94 @@ class ModelPatcher:
 
     def patch_model(self):
         model_sd = self.model_state_dict()
-        for p in self.patches:
-            for k in p[1]:
-                v = p[1][k]
-                key = k
-                if key not in model_sd:
-                    print("could not patch. key doesn't exist in model:", k)
-                    continue
+        for key in self.patches:
+            if key not in model_sd:
+                print("could not patch. key doesn't exist in model:", k)
+                continue
 
-                weight = model_sd[key]
-                if key not in self.backup:
-                    self.backup[key] = weight.clone()
+            weight = model_sd[key]
 
-                alpha = p[0]
-                strength_model = p[2]
+            if key not in self.backup:
+                self.backup[key] = weight.clone()
 
-                if strength_model != 1.0:
-                    weight *= strength_model
+            weight[:] = self.calculate_weight(self.patches[key], weight.clone(), key)
+        return self.model
 
-                if len(v) == 1:
-                    w1 = v[0]
+    def calculate_weight(self, patches, weight, key):
+        for p in patches:
+            alpha = p[0]
+            v = p[1]
+            strength_model = p[2]
+
+            if strength_model != 1.0:
+                weight *= strength_model
+
+            if isinstance(v, list):
+                v = (self.calculate_weight(v[1:], v[0].clone(), key), )
+
+            if len(v) == 1:
+                w1 = v[0]
+                if alpha != 0.0:
                     if w1.shape != weight.shape:
                         print("WARNING SHAPE MISMATCH {} WEIGHT NOT MERGED {} != {}".format(key, w1.shape, weight.shape))
                     else:
                         weight += alpha * w1.type(weight.dtype).to(weight.device)
-                elif len(v) == 4: #lora/locon
-                    mat1 = v[0]
-                    mat2 = v[1]
-                    if v[2] is not None:
-                        alpha *= v[2] / mat2.shape[0]
-                    if v[3] is not None:
-                        #locon mid weights, hopefully the math is fine because I didn't properly test it
-                        final_shape = [mat2.shape[1], mat2.shape[0], v[3].shape[2], v[3].shape[3]]
-                        mat2 = torch.mm(mat2.transpose(0, 1).flatten(start_dim=1).float(), v[3].transpose(0, 1).flatten(start_dim=1).float()).reshape(final_shape).transpose(0, 1)
-                    weight += (alpha * torch.mm(mat1.flatten(start_dim=1).float(), mat2.flatten(start_dim=1).float())).reshape(weight.shape).type(weight.dtype).to(weight.device)
-                elif len(v) == 8: #lokr
-                    w1 = v[0]
-                    w2 = v[1]
-                    w1_a = v[3]
-                    w1_b = v[4]
-                    w2_a = v[5]
-                    w2_b = v[6]
-                    t2 = v[7]
-                    dim = None
+            elif len(v) == 4: #lora/locon
+                mat1 = v[0]
+                mat2 = v[1]
+                if v[2] is not None:
+                    alpha *= v[2] / mat2.shape[0]
+                if v[3] is not None:
+                    #locon mid weights, hopefully the math is fine because I didn't properly test it
+                    final_shape = [mat2.shape[1], mat2.shape[0], v[3].shape[2], v[3].shape[3]]
+                    mat2 = torch.mm(mat2.transpose(0, 1).flatten(start_dim=1).float(), v[3].transpose(0, 1).flatten(start_dim=1).float()).reshape(final_shape).transpose(0, 1)
+                weight += (alpha * torch.mm(mat1.flatten(start_dim=1).float(), mat2.flatten(start_dim=1).float())).reshape(weight.shape).type(weight.dtype).to(weight.device)
+            elif len(v) == 8: #lokr
+                w1 = v[0]
+                w2 = v[1]
+                w1_a = v[3]
+                w1_b = v[4]
+                w2_a = v[5]
+                w2_b = v[6]
+                t2 = v[7]
+                dim = None
 
-                    if w1 is None:
-                        dim = w1_b.shape[0]
-                        w1 = torch.mm(w1_a.float(), w1_b.float())
+                if w1 is None:
+                    dim = w1_b.shape[0]
+                    w1 = torch.mm(w1_a.float(), w1_b.float())
 
-                    if w2 is None:
-                        dim = w2_b.shape[0]
-                        if t2 is None:
-                            w2 = torch.mm(w2_a.float(), w2_b.float())
-                        else:
-                            w2 = torch.einsum('i j k l, j r, i p -> p r k l', t2.float(), w2_b.float(), w2_a.float())
-
-                    if len(w2.shape) == 4:
-                        w1 = w1.unsqueeze(2).unsqueeze(2)
-                    if v[2] is not None and dim is not None:
-                        alpha *= v[2] / dim
-
-                    weight += alpha * torch.kron(w1.float(), w2.float()).reshape(weight.shape).type(weight.dtype).to(weight.device)
-                else: #loha
-                    w1a = v[0]
-                    w1b = v[1]
-                    if v[2] is not None:
-                        alpha *= v[2] / w1b.shape[0]
-                    w2a = v[3]
-                    w2b = v[4]
-                    if v[5] is not None: #cp decomposition
-                        t1 = v[5]
-                        t2 = v[6]
-                        m1 = torch.einsum('i j k l, j r, i p -> p r k l', t1.float(), w1b.float(), w1a.float())
-                        m2 = torch.einsum('i j k l, j r, i p -> p r k l', t2.float(), w2b.float(), w2a.float())
+                if w2 is None:
+                    dim = w2_b.shape[0]
+                    if t2 is None:
+                        w2 = torch.mm(w2_a.float(), w2_b.float())
                     else:
-                        m1 = torch.mm(w1a.float(), w1b.float())
-                        m2 = torch.mm(w2a.float(), w2b.float())
+                        w2 = torch.einsum('i j k l, j r, i p -> p r k l', t2.float(), w2_b.float(), w2_a.float())
 
-                    weight += (alpha * m1 * m2).reshape(weight.shape).type(weight.dtype).to(weight.device)
-        return self.model
+                if len(w2.shape) == 4:
+                    w1 = w1.unsqueeze(2).unsqueeze(2)
+                if v[2] is not None and dim is not None:
+                    alpha *= v[2] / dim
+
+                weight += alpha * torch.kron(w1.float(), w2.float()).reshape(weight.shape).type(weight.dtype).to(weight.device)
+            else: #loha
+                w1a = v[0]
+                w1b = v[1]
+                if v[2] is not None:
+                    alpha *= v[2] / w1b.shape[0]
+                w2a = v[3]
+                w2b = v[4]
+                if v[5] is not None: #cp decomposition
+                    t1 = v[5]
+                    t2 = v[6]
+                    m1 = torch.einsum('i j k l, j r, i p -> p r k l', t1.float(), w1b.float(), w1a.float())
+                    m2 = torch.einsum('i j k l, j r, i p -> p r k l', t2.float(), w2b.float(), w2a.float())
+                else:
+                    m1 = torch.mm(w1a.float(), w1b.float())
+                    m2 = torch.mm(w2a.float(), w2b.float())
+
+                weight += (alpha * m1 * m2).reshape(weight.shape).type(weight.dtype).to(weight.device)
+        return weight
+
     def unpatch_model(self):
         model_sd = self.model_state_dict()
         keys = list(self.backup.keys())
@@ -501,10 +439,10 @@ class ModelPatcher:
 
         self.backup = {}
 
-def load_lora_for_models(model, clip, lora_path, strength_model, strength_clip):
-    key_map = model_lora_keys(model.model)
-    key_map = model_lora_keys(clip.cond_stage_model, key_map)
-    loaded = load_lora(lora_path, key_map)
+def load_lora_for_models(model, clip, lora, strength_model, strength_clip):
+    key_map = model_lora_keys_unet(model.model)
+    key_map = model_lora_keys_clip(clip.cond_stage_model, key_map)
+    loaded = load_lora(lora, key_map)
     new_modelpatcher = model.clone()
     k = new_modelpatcher.add_patches(loaded, strength_model)
     new_clip = clip.clone()
@@ -522,17 +460,22 @@ class CLIP:
     def __init__(self, target=None, embedding_directory=None, no_init=False):
         if no_init:
             return
-        params = target.params
+        params = target.params.copy()
         clip = target.clip
         tokenizer = target.tokenizer
 
-        self.device = model_management.text_encoder_device()
-        params["device"] = self.device
+        load_device = model_management.text_encoder_device()
+        offload_device = model_management.text_encoder_offload_device()
+        params['device'] = load_device
         self.cond_stage_model = clip(**(params))
-        self.cond_stage_model = self.cond_stage_model.to(self.device)
+        #TODO: make sure this doesn't have a quality loss before enabling.
+        # if model_management.should_use_fp16(load_device):
+        #     self.cond_stage_model.half()
+
+        self.cond_stage_model = self.cond_stage_model.to()
 
         self.tokenizer = tokenizer(embedding_directory=embedding_directory)
-        self.patcher = ModelPatcher(self.cond_stage_model)
+        self.patcher = ModelPatcher(self.cond_stage_model, load_device=load_device, offload_device=offload_device)
         self.layer_idx = None
 
     def clone(self):
@@ -559,18 +502,12 @@ class CLIP:
     def encode_from_tokens(self, tokens, return_pooled=False):
         if self.layer_idx is not None:
             self.cond_stage_model.clip_layer(self.layer_idx)
-        try:
-            self.patch_model()
-            cond, pooled = self.cond_stage_model.encode_token_weights(tokens)
-            self.unpatch_model()
-        except Exception as e:
-            self.unpatch_model()
-            raise e
 
-        cond_out = cond
+        model_management.load_model_gpu(self.patcher)
+        cond, pooled = self.cond_stage_model.encode_token_weights(tokens)
         if return_pooled:
-            return cond_out, pooled
-        return cond_out
+            return cond, pooled
+        return cond
 
     def encode(self, text):
         tokens = self.tokenize(text)
@@ -604,8 +541,11 @@ class VAE:
             self.first_stage_model.load_state_dict(sd, strict=False)
 
         if device is None:
-            device = model_management.get_torch_device()
+            device = model_management.vae_device()
         self.device = device
+        self.offload_device = model_management.vae_offload_device()
+        self.vae_dtype = model_management.vae_dtype()
+        self.first_stage_model.to(self.vae_dtype)
 
     def decode_tiled_(self, samples, tile_x=64, tile_y=64, overlap = 16):
         steps = samples.shape[0] * utils.get_tiled_scale_steps(samples.shape[3], samples.shape[2], tile_x, tile_y, overlap)
@@ -613,7 +553,7 @@ class VAE:
         steps += samples.shape[0] * utils.get_tiled_scale_steps(samples.shape[3], samples.shape[2], tile_x * 2, tile_y // 2, overlap)
         pbar = utils.ProgressBar(steps)
 
-        decode_fn = lambda a: (self.first_stage_model.decode(a.to(self.device)) + 1.0)
+        decode_fn = lambda a: (self.first_stage_model.decode(a.to(self.vae_dtype).to(self.device)) + 1.0).float()
         output = torch.clamp((
             (utils.tiled_scale(samples, decode_fn, tile_x // 2, tile_y * 2, overlap, upscale_amount = 8, pbar = pbar) +
             utils.tiled_scale(samples, decode_fn, tile_x * 2, tile_y // 2, overlap, upscale_amount = 8, pbar = pbar) +
@@ -627,7 +567,7 @@ class VAE:
         steps += pixel_samples.shape[0] * utils.get_tiled_scale_steps(pixel_samples.shape[3], pixel_samples.shape[2], tile_x * 2, tile_y // 2, overlap)
         pbar = utils.ProgressBar(steps)
 
-        encode_fn = lambda a: self.first_stage_model.encode(2. * a.to(self.device) - 1.).sample()
+        encode_fn = lambda a: self.first_stage_model.encode(2. * a.to(self.vae_dtype).to(self.device) - 1.).sample().float()
         samples = utils.tiled_scale(pixel_samples, encode_fn, tile_x, tile_y, overlap, upscale_amount = (1/8), out_channels=4, pbar=pbar)
         samples += utils.tiled_scale(pixel_samples, encode_fn, tile_x * 2, tile_y // 2, overlap, upscale_amount = (1/8), out_channels=4, pbar=pbar)
         samples += utils.tiled_scale(pixel_samples, encode_fn, tile_x // 2, tile_y * 2, overlap, upscale_amount = (1/8), out_channels=4, pbar=pbar)
@@ -644,13 +584,13 @@ class VAE:
 
             pixel_samples = torch.empty((samples_in.shape[0], 3, round(samples_in.shape[2] * 8), round(samples_in.shape[3] * 8)), device="cpu")
             for x in range(0, samples_in.shape[0], batch_number):
-                samples = samples_in[x:x+batch_number].to(self.device)
-                pixel_samples[x:x+batch_number] = torch.clamp((self.first_stage_model.decode(samples) + 1.0) / 2.0, min=0.0, max=1.0).cpu()
+                samples = samples_in[x:x+batch_number].to(self.vae_dtype).to(self.device)
+                pixel_samples[x:x+batch_number] = torch.clamp((self.first_stage_model.decode(samples) + 1.0) / 2.0, min=0.0, max=1.0).cpu().float()
         except model_management.OOM_EXCEPTION as e:
             print("Warning: Ran out of memory when regular VAE decoding, retrying with tiled VAE decoding.")
             pixel_samples = self.decode_tiled_(samples_in)
 
-        self.first_stage_model = self.first_stage_model.cpu()
+        self.first_stage_model = self.first_stage_model.to(self.offload_device)
         pixel_samples = pixel_samples.cpu().movedim(1,-1)
         return pixel_samples
 
@@ -658,7 +598,7 @@ class VAE:
         model_management.unload_model()
         self.first_stage_model = self.first_stage_model.to(self.device)
         output = self.decode_tiled_(samples, tile_x, tile_y, overlap)
-        self.first_stage_model = self.first_stage_model.cpu()
+        self.first_stage_model = self.first_stage_model.to(self.offload_device)
         return output.movedim(1,-1)
 
     def encode(self, pixel_samples):
@@ -671,14 +611,14 @@ class VAE:
             batch_number = max(1, batch_number)
             samples = torch.empty((pixel_samples.shape[0], 4, round(pixel_samples.shape[2] // 8), round(pixel_samples.shape[3] // 8)), device="cpu")
             for x in range(0, pixel_samples.shape[0], batch_number):
-                pixels_in = (2. * pixel_samples[x:x+batch_number] - 1.).to(self.device)
-                samples[x:x+batch_number] = self.first_stage_model.encode(pixels_in).sample().cpu()
+                pixels_in = (2. * pixel_samples[x:x+batch_number] - 1.).to(self.vae_dtype).to(self.device)
+                samples[x:x+batch_number] = self.first_stage_model.encode(pixels_in).sample().cpu().float()
 
         except model_management.OOM_EXCEPTION as e:
             print("Warning: Ran out of memory when regular VAE encoding, retrying with tiled VAE encoding.")
             samples = self.encode_tiled_(pixel_samples)
 
-        self.first_stage_model = self.first_stage_model.cpu()
+        self.first_stage_model = self.first_stage_model.to(self.offload_device)
         return samples
 
     def encode_tiled(self, pixel_samples, tile_x=512, tile_y=512, overlap = 64):
@@ -686,8 +626,12 @@ class VAE:
         self.first_stage_model = self.first_stage_model.to(self.device)
         pixel_samples = pixel_samples.movedim(-1,1)
         samples = self.encode_tiled_(pixel_samples, tile_x=tile_x, tile_y=tile_y, overlap=overlap)
-        self.first_stage_model = self.first_stage_model.cpu()
+        self.first_stage_model = self.first_stage_model.to(self.offload_device)
         return samples
+
+    def get_sd(self):
+        return self.first_stage_model.state_dict()
+
 
     def get_sd(self):
         return self.first_stage_model.state_dict()
@@ -1094,6 +1038,8 @@ def load_checkpoint(config_path=None, ckpt_path=None, output_vae=True, output_cl
     if fp16:
         model = model.half()
 
+    offload_device = model_management.unet_offload_device()
+    model = model.to(offload_device)
     model.load_model_weights(state_dict, "model.diffusion_model.")
 
     if output_vae:
@@ -1116,8 +1062,14 @@ def load_checkpoint(config_path=None, ckpt_path=None, output_vae=True, output_cl
         w.cond_stage_model = clip.cond_stage_model
         load_clip_weights(w, state_dict)
 
-    return (ModelPatcher(model), clip, vae)
+    return (ModelPatcher(model, load_device=model_management.get_torch_device(), offload_device=offload_device), clip, vae)
 
+def calculate_parameters(sd, prefix):
+    params = 0
+    for k in sd.keys():
+        if k.startswith(prefix):
+            params += sd[k].nelement()
+    return params
 
 def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, output_clipvision=False, embedding_directory=None):
     sd = utils.load_torch_file(ckpt_path)
@@ -1128,7 +1080,8 @@ def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, o
     model = None
     clip_target = None
 
-    fp16 = model_management.should_use_fp16()
+    parameters = calculate_parameters(sd, "model.diffusion_model.")
+    fp16 = model_management.should_use_fp16(model_params=parameters)
 
     class WeightsLoader(torch.nn.Module):
         pass
@@ -1141,7 +1094,9 @@ def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, o
         if output_clipvision:
             clipvision = clip_vision.load_clipvision_from_sd(sd, model_config.clip_vision_prefix, True)
 
-    model = model_config.get_model(sd)
+    offload_device = model_management.unet_offload_device()
+    model = model_config.get_model(sd, "model.diffusion_model.")
+    model = model.to(offload_device)
     model.load_model_weights(sd, "model.diffusion_model.")
 
     if output_vae:
@@ -1162,7 +1117,74 @@ def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, o
     if len(left_over) > 0:
         print("left over keys:", left_over)
 
-    return (ModelPatcher(model), clip, vae, clipvision)
+    return (ModelPatcher(model, load_device=model_management.get_torch_device(), offload_device=offload_device), clip, vae, clipvision)
+
+
+def load_unet(unet_path): #load unet in diffusers format
+    sd = utils.load_torch_file(unet_path)
+    parameters = calculate_parameters(sd, "")
+    fp16 = model_management.should_use_fp16(model_params=parameters)
+
+    match = {}
+    match["context_dim"] = sd["down_blocks.0.attentions.1.transformer_blocks.0.attn2.to_k.weight"].shape[1]
+    match["model_channels"] = sd["conv_in.weight"].shape[0]
+    match["in_channels"] = sd["conv_in.weight"].shape[1]
+    match["adm_in_channels"] = None
+    if "class_embedding.linear_1.weight" in sd:
+        match["adm_in_channels"] = sd["class_embedding.linear_1.weight"].shape[1]
+
+    SDXL = {'use_checkpoint': False, 'image_size': 32, 'out_channels': 4, 'use_spatial_transformer': True, 'legacy': False,
+            'num_classes': 'sequential', 'adm_in_channels': 2816, 'use_fp16': fp16, 'in_channels': 4, 'model_channels': 320,
+            'num_res_blocks': 2, 'attention_resolutions': [2, 4], 'transformer_depth': [0, 2, 10], 'channel_mult': [1, 2, 4],
+            'transformer_depth_middle': 10, 'use_linear_in_transformer': True, 'context_dim': 2048}
+
+    SDXL_refiner = {'use_checkpoint': False, 'image_size': 32, 'out_channels': 4, 'use_spatial_transformer': True, 'legacy': False,
+                    'num_classes': 'sequential', 'adm_in_channels': 2560, 'use_fp16': fp16, 'in_channels': 4, 'model_channels': 384,
+                    'num_res_blocks': 2, 'attention_resolutions': [2, 4], 'transformer_depth': [0, 4, 4, 0], 'channel_mult': [1, 2, 4, 4],
+                    'transformer_depth_middle': 4, 'use_linear_in_transformer': True, 'context_dim': 1280}
+
+    SD21 = {'use_checkpoint': False, 'image_size': 32, 'out_channels': 4, 'use_spatial_transformer': True, 'legacy': False,
+            'adm_in_channels': None, 'use_fp16': fp16, 'in_channels': 4, 'model_channels': 320, 'num_res_blocks': 2,
+            'attention_resolutions': [1, 2, 4], 'transformer_depth': [1, 1, 1, 0], 'channel_mult': [1, 2, 4, 4],
+            'transformer_depth_middle': 1, 'use_linear_in_transformer': True, 'context_dim': 1024}
+
+    SD21_uncliph = {'use_checkpoint': False, 'image_size': 32, 'out_channels': 4, 'use_spatial_transformer': True, 'legacy': False,
+                    'num_classes': 'sequential', 'adm_in_channels': 2048, 'use_fp16': True, 'in_channels': 4, 'model_channels': 320,
+                    'num_res_blocks': 2, 'attention_resolutions': [1, 2, 4], 'transformer_depth': [1, 1, 1, 0], 'channel_mult': [1, 2, 4, 4],
+                    'transformer_depth_middle': 1, 'use_linear_in_transformer': True, 'context_dim': 1024}
+
+    SD21_unclipl = {'use_checkpoint': False, 'image_size': 32, 'out_channels': 4, 'use_spatial_transformer': True, 'legacy': False,
+                    'num_classes': 'sequential', 'adm_in_channels': 1536, 'use_fp16': True, 'in_channels': 4, 'model_channels': 320,
+                    'num_res_blocks': 2, 'attention_resolutions': [1, 2, 4], 'transformer_depth': [1, 1, 1, 0], 'channel_mult': [1, 2, 4, 4],
+                    'transformer_depth_middle': 1, 'use_linear_in_transformer': True, 'context_dim': 1024}
+
+    SD15 = {'use_checkpoint': False, 'image_size': 32, 'out_channels': 4, 'use_spatial_transformer': True, 'legacy': False,
+            'adm_in_channels': None, 'use_fp16': True, 'in_channels': 4, 'model_channels': 320, 'num_res_blocks': 2,
+            'attention_resolutions': [1, 2, 4], 'transformer_depth': [1, 1, 1, 0], 'channel_mult': [1, 2, 4, 4],
+            'transformer_depth_middle': 1, 'use_linear_in_transformer': False, 'context_dim': 768}
+
+    supported_models = [SDXL, SDXL_refiner, SD21, SD15, SD21_uncliph, SD21_unclipl]
+    print("match", match)
+    for unet_config in supported_models:
+        matches = True
+        for k in match:
+            if match[k] != unet_config[k]:
+                matches = False
+                break
+        if matches:
+            diffusers_keys = utils.unet_to_diffusers(unet_config)
+            new_sd = {}
+            for k in diffusers_keys:
+                if k in sd:
+                    new_sd[diffusers_keys[k]] = sd.pop(k)
+                else:
+                    print(diffusers_keys[k], k)
+            offload_device = model_management.unet_offload_device()
+            model_config = model_detection.model_config_from_unet_config(unet_config)
+            model = model_config.get_model(new_sd, "")
+            model = model.to(offload_device)
+            model.load_model_weights(new_sd, "")
+            return ModelPatcher(model, load_device=model_management.get_torch_device(), offload_device=offload_device)
 
 def save_checkpoint(output_path, model, clip, vae, metadata=None):
     try:

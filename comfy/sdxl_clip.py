@@ -3,11 +3,12 @@ import torch
 import os
 
 class SDXLClipG(sd1_clip.SD1ClipModel):
-    def __init__(self, device="cpu", max_length=77, freeze=True, layer="penultimate", layer_idx=None):
+    def __init__(self, device="cpu", max_length=77, freeze=True, layer="penultimate", layer_idx=None, textmodel_path=None):
         textmodel_json_config = os.path.join(os.path.dirname(os.path.realpath(__file__)), "clip_config_bigg.json")
-        super().__init__(device=device, freeze=freeze, textmodel_json_config=textmodel_json_config)
+        super().__init__(device=device, freeze=freeze, textmodel_json_config=textmodel_json_config, textmodel_path=textmodel_path)
         self.empty_tokens = [[49406] + [49407] + [0] * 75]
         self.text_projection = torch.nn.Parameter(torch.empty(1280, 1280))
+        self.logit_scale = torch.nn.Parameter(torch.tensor(4.6055))
         self.layer_norm_hidden_state = False
         if layer == "last":
             pass
@@ -34,11 +35,13 @@ class SDXLClipG(sd1_clip.SD1ClipModel):
     def load_sd(self, sd):
         if "text_projection" in sd:
             self.text_projection[:] = sd.pop("text_projection")
+        if "text_projection.weight" in sd:
+            self.text_projection[:] = sd.pop("text_projection.weight").transpose(0, 1)
         return super().load_sd(sd)
 
 class SDXLClipGTokenizer(sd1_clip.SD1Tokenizer):
     def __init__(self, tokenizer_path=None, embedding_directory=None):
-        super().__init__(tokenizer_path, pad_with_end=False, embedding_directory=embedding_directory, embedding_size=1280)
+        super().__init__(tokenizer_path, pad_with_end=False, embedding_directory=embedding_directory, embedding_size=1280, embedding_key='clip_g')
 
 
 class SDXLTokenizer(sd1_clip.SD1Tokenizer):

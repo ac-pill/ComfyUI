@@ -53,9 +53,9 @@ class SD20(supported_models_base.BASE):
 
     latent_format = latent_formats.SD15
 
-    def v_prediction(self, state_dict):
+    def v_prediction(self, state_dict, prefix=""):
         if self.unet_config["in_channels"] == 4: #SD2.0 inpainting models are not v prediction
-            k = "model.diffusion_model.output_blocks.11.1.transformer_blocks.0.norm1.bias"
+            k = "{}output_blocks.11.1.transformer_blocks.0.norm1.bias".format(prefix)
             out = state_dict[k]
             if torch.std(out, unbiased=False) > 0.09: # not sure how well this will actually work. I guess we will find out.
                 return True
@@ -109,7 +109,7 @@ class SDXLRefiner(supported_models_base.BASE):
 
     latent_format = latent_formats.SDXL
 
-    def get_model(self, state_dict):
+    def get_model(self, state_dict, prefix=""):
         return model_base.SDXLRefiner(self)
 
     def process_clip_state_dict(self, state_dict):
@@ -118,6 +118,7 @@ class SDXLRefiner(supported_models_base.BASE):
 
         state_dict = utils.transformers_convert(state_dict, "conditioner.embedders.0.model.", "cond_stage_model.clip_g.transformer.text_model.", 32)
         keys_to_replace["conditioner.embedders.0.model.text_projection"] = "cond_stage_model.clip_g.text_projection"
+        keys_to_replace["conditioner.embedders.0.model.logit_scale"] = "cond_stage_model.clip_g.logit_scale"
 
         state_dict = supported_models_base.state_dict_key_replace(state_dict, keys_to_replace)
         return state_dict
@@ -143,7 +144,7 @@ class SDXL(supported_models_base.BASE):
 
     latent_format = latent_formats.SDXL
 
-    def get_model(self, state_dict):
+    def get_model(self, state_dict, prefix=""):
         return model_base.SDXL(self)
 
     def process_clip_state_dict(self, state_dict):
@@ -153,6 +154,7 @@ class SDXL(supported_models_base.BASE):
         replace_prefix["conditioner.embedders.0.transformer.text_model"] = "cond_stage_model.clip_l.transformer.text_model"
         state_dict = utils.transformers_convert(state_dict, "conditioner.embedders.1.model.", "cond_stage_model.clip_g.transformer.text_model.", 32)
         keys_to_replace["conditioner.embedders.1.model.text_projection"] = "cond_stage_model.clip_g.text_projection"
+        keys_to_replace["conditioner.embedders.1.model.logit_scale"] = "cond_stage_model.clip_g.logit_scale"
 
         state_dict = supported_models_base.state_dict_prefix_replace(state_dict, replace_prefix)
         state_dict = supported_models_base.state_dict_key_replace(state_dict, keys_to_replace)
