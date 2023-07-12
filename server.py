@@ -499,8 +499,35 @@ class PromptServer():
                     return web.json_response({"prompt_id": prompt_id, "number": number})
                 else:
                     print("invalid prompt:", valid[1])
+                    ## Edit on Block handling invalid prompts 
+                    message = ("invalid prompt:", valid[1])
+                    bot_message = {
+                        "prompt_id": self.prompt_id,
+                        "user_id": user_id,
+                        "channel_id": channel_id,
+                        "filenames": "None",
+                        "message": message
+                    }
+                    print(f'BOT MESSAGE: {bot_message}')
+                    self.send_message_to_bot(bot_message)
+                    self.shutdown()
+                    ## End Edit Block
                     return web.json_response({"error": valid[1], "node_errors": valid[3]}, status=400)
+
             else:
+                ## Edit on Block handling invalid prompts
+                message = ({"error": "no prompt", "node_errors": []})
+                bot_message = {
+                    "prompt_id": self.prompt_id,
+                    "user_id": user_id,
+                    "channel_id": channel_id,
+                    "filenames": "None",
+                    "message": message
+                }
+                print(f'BOT MESSAGE: {bot_message}')
+                self.send_message_to_bot(bot_message)
+                self.shutdown()
+                ## End Edit Block
                 return web.json_response({"error": "no prompt", "node_errors": []}, status=400)
 
         @routes.post("/queue")
