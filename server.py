@@ -508,7 +508,7 @@ class PromptServer():
                         "message": message
                     }
                     print(f'BOT MESSAGE: {bot_message}')
-                    self.send_message_to_bot(bot_message)
+                    #self.send_message_to_bot(bot_message)
                     self.shutdown()
                     ## End Edit Block
                     return web.json_response({"error": valid[1], "node_errors": valid[3]}, status=400)
