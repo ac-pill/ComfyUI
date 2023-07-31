@@ -102,6 +102,9 @@ class PromptServer():
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
         self.pipe = pipe ## Hold Server state for Parent Process
+        self.msg_prompt = None ## Hold the prompt stated by user
+        self.msg_neg_prompt = None ## Hold the negative prompt stated by user
+        self.msg_seed = None ## Hold the seed stated by user
 
         @routes.get('/ws')
         async def websocket_handler(request):
@@ -486,6 +489,12 @@ class PromptServer():
                         server_id = extra_data["server_id"]
                     if "port" in extra_data:
                         port = extra_data["port"]
+                    if "prompt" in extra_data:
+                        self.msg_prompt = extra_data["prompt"]
+                    if "neg_prompt" in extra_data:
+                        self.msg_neg_prompt = extra_data["neg_prompt"]
+                    if "seed" in extra_data:
+                        self.msg_seed = extra_data["seed"]
                     self.user_prompt_map[prompt_id] = {
                             "user_id": user_id,
                             "channel_id": channel_id,
@@ -756,7 +765,10 @@ class PromptServer():
                     "prompt_id": data['prompt_id'],
                     "user_id": self.user_prompt_map[prompt_id]["user_id"],
                     "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
-                    "filenames": data['filenames']
+                    "filenames": data['filenames'],
+                    "prompt": self.msg_prompt,
+                    "neg_prompt": self.msg_neg_prompt,
+                    "seed": self.msg_seed
                 }
                 print(f'BOT MESSAGE: {bot_message}')
                 # This could be a POST request or Webhook
