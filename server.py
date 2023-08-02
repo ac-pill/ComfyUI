@@ -443,8 +443,6 @@ class PromptServer():
             out_string = ""
             json_data =  await request.json()
 
-            print(f"POST Prompt Received: \n {json_data}") # Remove
-
             if "number" in json_data:
                 number = float(json_data['number'])
             else:
@@ -486,12 +484,7 @@ class PromptServer():
                     self.msg_neg_prompt = extra_data["neg_prompt"]
                 if "seed" in extra_data:
                     self.msg_seed = extra_data["seed"]
-                self.user_prompt_map[prompt_id] = {
-                        "user_id": user_id,
-                        "channel_id": channel_id,
-                        "server_id": server_id,
-                        "port": port
-                    }
+
                 if "client_id" in json_data:
                     extra_data["client_id"] = json_data["client_id"]
                     print(f'Client ID: {extra_data["client_id"]}')
@@ -503,6 +496,12 @@ class PromptServer():
                     prompt_id = str(uuid.uuid4())
                     self.prompt_id = prompt_id
                     outputs_to_execute = valid[2]
+                    self.user_prompt_map[prompt_id] = {
+                        "user_id": user_id,
+                        "channel_id": channel_id,
+                        "server_id": server_id,
+                        "port": port
+                    }
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
