@@ -464,46 +464,47 @@ class PromptServer():
                 if "extra_data" in json_data:
                     extra_data = json_data["extra_data"]
 
+                ## Start Edit
+                ## Adding default vars
+                user_id = None  
+                channel_id = None
+                server_id = None
+                port = None
+                self.prompt_id = prompt_id
+                ### User ID added on client side if using API ###
+                print(f'EXTRA DATA: {extra_data}')
+                if "user_id" in extra_data:
+                    user_id = extra_data["user_id"]
+                if "channel_id" in extra_data:
+                    channel_id = extra_data["channel_id"]
+                if "server_id" in extra_data:
+                    server_id = extra_data["server_id"]
+                if "port" in extra_data:
+                    port = extra_data["port"]
+                if "prompt" in extra_data:
+                    self.msg_prompt = extra_data["prompt"]
+                if "neg_prompt" in extra_data:
+                    self.msg_neg_prompt = extra_data["neg_prompt"]
+                if "seed" in extra_data:
+                    self.msg_seed = extra_data["seed"]
+                self.user_prompt_map[prompt_id] = {
+                        "user_id": user_id,
+                        "channel_id": channel_id,
+                        "server_id": server_id,
+                        "port": port
+                    }
                 if "client_id" in json_data:
                     extra_data["client_id"] = json_data["client_id"]
                     print(f'Client ID: {extra_data["client_id"]}')
                 else:
                     extra_data["client_id"] = str(uuid.uuid4().hex)
                     print(f'Client ID: {extra_data["client_id"]}')
-
+                ### User ID added on client side if using API ###
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
                     outputs_to_execute = valid[2]
-                    ### User ID added on client side if using API ###
-                    user_id = None  
-                    channel_id = None
-                    server_id = None
-                    port = None
-                    self.prompt_id = prompt_id
-                    print(f'EXTRA DATA: {extra_data}')
-                    if "user_id" in extra_data:
-                        user_id = extra_data["user_id"]
-                    if "channel_id" in extra_data:
-                        channel_id = extra_data["channel_id"]
-                    if "server_id" in extra_data:
-                        server_id = extra_data["server_id"]
-                    if "port" in extra_data:
-                        port = extra_data["port"]
-                    if "prompt" in extra_data:
-                        self.msg_prompt = extra_data["prompt"]
-                    if "neg_prompt" in extra_data:
-                        self.msg_neg_prompt = extra_data["neg_prompt"]
-                    if "seed" in extra_data:
-                        self.msg_seed = extra_data["seed"]
-                    self.user_prompt_map[prompt_id] = {
-                            "user_id": user_id,
-                            "channel_id": channel_id,
-                            "server_id": server_id,
-                            "port": port
-                        }
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
-                    ## User ID added on client side if using API ###
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
                     return web.json_response({"prompt_id": prompt_id, "number": number})
                 else:
@@ -532,7 +533,7 @@ class PromptServer():
                     "message": message
                 }
                 print(f'BOT MESSAGE: {bot_message}')
-                self.send_message_to_bot(bot_message)
+                # self.send_message_to_bot(bot_message)
                 self.shutdown()
                 ## End Edit Block
                 return web.json_response({"error": "no prompt", "node_errors": []}, status=400)
