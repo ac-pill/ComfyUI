@@ -470,7 +470,6 @@ class PromptServer():
                 channel_id = None
                 server_id = None
                 port = None
-                self.prompt_id = prompt_id
                 ### User ID added on client side if using API ###
                 print(f'EXTRA DATA: {extra_data}')
                 if "user_id" in extra_data:
@@ -502,6 +501,7 @@ class PromptServer():
                 ### User ID added on client side if using API ###
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
+                    self.prompt_id = prompt_id
                     outputs_to_execute = valid[2]
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
@@ -512,7 +512,7 @@ class PromptServer():
                     ## Edit on Block handling invalid prompts 
                     message = ("invalid prompt:", valid[1])
                     bot_message = {
-                        "prompt_id": self.prompt_id,
+                        "prompt_id": "None",
                         "user_id": user_id,
                         "channel_id": channel_id,
                         "message": message
@@ -527,7 +527,7 @@ class PromptServer():
                 ## Edit on Block handling invalid prompts
                 message = ({"error": "no prompt", "node_errors": []})
                 bot_message = {
-                    "prompt_id": self.prompt_id,
+                    "prompt_id": "None",
                     "user_id": user_id,
                     "channel_id": channel_id,
                     "message": message
