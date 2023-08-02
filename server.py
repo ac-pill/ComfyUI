@@ -763,6 +763,7 @@ class PromptServer():
                 data['filenames'] = filenames
                 print(f'filenames: {data["filenames"]}')
                 print(f'prompt_id: {self.prompt_id}')
+                print(f'seed to Bot: {self.msg_seed}')
                 # Send message to bot
                 bot_message = {
                     "prompt_id": data['prompt_id'],
