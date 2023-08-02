@@ -481,7 +481,6 @@ class PromptServer():
                 if "prompt" in extra_data:
                     self.msg_prompt = extra_data["prompt"]
                 if "neg_prompt" in extra_data:
-                    print(f'Neg Prompt: {extra_data["neg_prompt"]}')
                     self.msg_neg_prompt = extra_data["neg_prompt"]
                 if "seed" in extra_data:
                     self.msg_seed = extra_data["seed"]
@@ -747,7 +746,6 @@ class PromptServer():
         ## Error not all events are tracked
         print(f'EVENT: {event}')
         print(f'DATA: {data}')
-        print(f'seed to Bot: {self.msg_seed}')
         # Get the prompt_id
         prompt_id = self.prompt_id
         # Check if the event is 'executed' (i.e., a node has been executed)
@@ -762,7 +760,6 @@ class PromptServer():
                 data['filenames'] = filenames
                 print(f'filenames: {data["filenames"]}')
                 print(f'prompt_id: {self.prompt_id}')
-                print(f'seed to Bot: {self.msg_seed}')
                 # Send message to bot
                 bot_message = {
                     "prompt_id": data['prompt_id'],
