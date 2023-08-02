@@ -470,6 +470,7 @@ class PromptServer():
                 port = None
                 ### User ID added on client side if using API ###
                 print(f'EXTRA DATA: {extra_data}')
+                print(f'Seed: {extra_data["seed"]}')
                 if "user_id" in extra_data:
                     user_id = extra_data["user_id"]
                 if "channel_id" in extra_data:
@@ -481,9 +482,10 @@ class PromptServer():
                 if "prompt" in extra_data:
                     self.msg_prompt = extra_data["prompt"]
                 if "neg_prompt" in extra_data:
-                    print(f'Neg Prompt {extra_data["neg_prompt"]}')
+                    print(f'Neg Prompt: {extra_data["neg_prompt"]}')
                     self.msg_neg_prompt = extra_data["neg_prompt"]
                 if "seed" in extra_data:
+                    print(f'Seed: {extra_data["seed"]}')
                     self.msg_seed = extra_data["seed"]
 
                 if "client_id" in json_data:
