@@ -481,6 +481,7 @@ class PromptServer():
                 if "prompt" in extra_data:
                     self.msg_prompt = extra_data["prompt"]
                 if "neg_prompt" in extra_data:
+                    print(f'Neg Prompt {extra_data["neg_prompt"]}')
                     self.msg_neg_prompt = extra_data["neg_prompt"]
                 if "seed" in extra_data:
                     self.msg_seed = extra_data["seed"]
