@@ -1,22 +1,24 @@
 import os
 import importlib.util
 import folder_paths
-
+import time
 
 def execute_prestartup_script():
     def execute_script(script_path):
-        if os.path.exists(script_path):
-            module_name = os.path.splitext(script_path)[0]
-            try:
-                spec = importlib.util.spec_from_file_location(module_name, script_path)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-            except Exception as e:
-                print(f"Failed to execute startup-script: {script_path} / {e}")
+        module_name = os.path.splitext(script_path)[0]
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, script_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return True
+        except Exception as e:
+            print(f"Failed to execute startup-script: {script_path} / {e}")
+        return False
 
     node_paths = folder_paths.get_folder_paths("custom_nodes")
     for custom_node_path in node_paths:
         possible_modules = os.listdir(custom_node_path)
+        node_prestartup_times = []
 
         for possible_module in possible_modules:
             module_path = os.path.join(custom_node_path, possible_module)
@@ -24,8 +26,19 @@ def execute_prestartup_script():
                 continue
 
             script_path = os.path.join(module_path, "prestartup_script.py")
-            execute_script(script_path)
-
+            if os.path.exists(script_path):
+                time_before = time.perf_counter()
+                success = execute_script(script_path)
+                node_prestartup_times.append((time.perf_counter() - time_before, module_path, success))
+    if len(node_prestartup_times) > 0:
+        print("\nPrestartup times for custom nodes:")
+        for n in sorted(node_prestartup_times):
+            if n[2]:
+                import_message = ""
+            else:
+                import_message = " (PRESTARTUP FAILED)"
+            print("{:6.1f} seconds{}:".format(n[0], import_message), n[1])
+        print()
 
 execute_prestartup_script()
 
@@ -36,11 +49,9 @@ import itertools
 import shutil
 import threading
 import gc
-import time
 
 from comfy.cli_args import Arguments
 import comfy.utils
-
 ## Start of Edit Block 1 ##
 
 import json
@@ -107,6 +118,18 @@ def start_server(child_conn, call_on_start=None):
 
 ## End of Edit Block 2 ##
 
+
+def cuda_malloc_warning():
+    device = comfy.model_management.get_torch_device()
+    device_name = comfy.model_management.get_torch_device_name(device)
+    cuda_malloc_warning = False
+    if "cudaMallocAsync" in device_name:
+        for b in cuda_malloc.blacklist:
+            if b in device_name:
+                cuda_malloc_warning = True
+        if cuda_malloc_warning:
+            print("\nWARNING: this card most likely does not support cuda-malloc, if you get \"CUDA error\" please run ComfyUI with: --disable-cuda-malloc\n")
+
 def prompt_worker(q, server):
     e = execution.PromptExecutor(server)
     while True:
@@ -127,15 +150,15 @@ async def run(server, address='', port=8188, verbose=True, call_on_start=None):
 
 
 def hijack_progress(server):
-    def hook(value, total, preview_image_bytes):
+    def hook(value, total, preview_image):
         server.send_sync("progress", {"value": value, "max": total}, server.client_id)
-        if preview_image_bytes is not None:
-            server.send_sync(BinaryEventTypes.PREVIEW_IMAGE, preview_image_bytes, server.client_id)
+        if preview_image is not None:
+            server.send_sync(BinaryEventTypes.UNENCODED_PREVIEW_IMAGE, preview_image, server.client_id)
     comfy.utils.set_progress_bar_global_hook(hook)
 
 
 def cleanup_temp():
-    temp_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "temp")
+    temp_dir = folder_paths.get_temp_directory()
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -162,9 +185,7 @@ def load_extra_path_config(yaml_path):
 
 
 def main_func(args_dict, child_conn=None, cmdline=False):
-
-    cleanup_temp()
-
+    
     print("Starting Server")
 
     args_class = Arguments()
@@ -179,17 +200,30 @@ def main_func(args_dict, child_conn=None, cmdline=False):
         print(f'Args from command line:{args_dict}')
         args = args_class.init_args()
         # Note: you'll need to modify init_args function to take command line arguments
+    
+    if args.temp_directory:
+        temp_dir = os.path.join(os.path.abspath(args.temp_directory), "temp")
+        print(f"Setting temp directory to: {temp_dir}")
+        folder_paths.set_temp_directory(temp_dir)
+    cleanup_temp()
 
-    print(f'DONT UPCAST: {args.dont_upcast_attention}')
+    ## Check for Cuda Visible devices
+    if args.cuda_device is not None:
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
+        print("Set cuda device to:", args.cuda_device)
+
+        import cuda_malloc
+    
 
     # For debugging temp args JSON File
     with open("temp_args.json", 'r') as f:
         this = json.load(f)
     print(f'JSON FILE CONTAINER:{this}')
 
-    if args.dont_upcast_attention:
-        print("disabling upcasting of attention")
-        os.environ['ATTN_PRECISION'] = "fp16"
+    init_custom_nodes()
+    cuda_malloc_warning()
+    server.add_routes()
+    hijack_progress(server)
 
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
@@ -203,11 +237,13 @@ def main_func(args_dict, child_conn=None, cmdline=False):
     if args.auto_launch:
         def startup_server(address, port):
             import webbrowser
+            if os.name == 'nt' and address == '0.0.0.0':
+                address = '127.0.0.1'
             webbrowser.open(f"http://{address}:{port}")
         call_on_start = startup_server
 
     if cmdline:
-        print("here")
+        print("Arguments from command line")
         start_server(child_conn, call_on_start=call_on_start)
         
     else:

@@ -1,14 +1,17 @@
 import os
 import sys
 import asyncio
+import traceback
+
 import nodes
 import folder_paths
 import execution
 import uuid
+import urllib
 import json
 import glob
 import struct
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
 
 try:
@@ -30,6 +33,10 @@ import comfy.model_management
 import requests
 import time
 
+## Using Requests for Now, replace later with aiohttp
+import requests
+import time
+
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
@@ -42,6 +49,17 @@ async def send_socket_catch_exception(function, message):
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
+    UNENCODED_PREVIEW_IMAGE = 2
+
+async def send_socket_catch_exception(function, message):
+    try:
+        await function(message)
+    except (aiohttp.ClientError, aiohttp.ClientPayloadError, ConnectionResetError) as err:
+        print("send error:", err)
+
+class BinaryEventTypes:
+    PREVIEW_IMAGE = 1
+    UNENCODED_PREVIEW_IMAGE = 2
 
 async def send_socket_catch_exception(function, message):
     try:
@@ -79,6 +97,8 @@ class PromptServer():
 
         mimetypes.init()
         mimetypes.types_map['.js'] = 'application/javascript; charset=utf-8'
+
+        self.supports = ["custom_nodes_from_web"]
         self.prompt_queue = None
         self.loop = loop
         self.messages = asyncio.Queue()
@@ -90,7 +110,7 @@ class PromptServer():
         if self.args.enable_cors_header:
             middlewares.append(create_cors_middleware(self.args.enable_cors_header))
 
-        self.app = web.Application(client_max_size=20971520, middlewares=middlewares)
+        self.app = web.Application(client_max_size=104857600, middlewares=middlewares)
         self.sockets = dict()
         self.web_root = os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "web")
@@ -105,6 +125,8 @@ class PromptServer():
         self.msg_prompt = None ## Hold the prompt stated by user
         self.msg_neg_prompt = None ## Hold the negative prompt stated by user
         self.msg_seed = None ## Hold the seed stated by user
+
+        self.on_prompt_handlers = []
 
         @routes.get('/ws')
         async def websocket_handler(request):
@@ -144,8 +166,17 @@ class PromptServer():
 
         @routes.get("/extensions")
         async def get_extensions(request):
-            files = glob.glob(os.path.join(self.web_root, 'extensions/**/*.js'), recursive=True)
-            return web.json_response(list(map(lambda f: "/" + os.path.relpath(f, self.web_root).replace("\\", "/"), files)))
+            files = glob.glob(os.path.join(
+                self.web_root, 'extensions/**/*.js'), recursive=True)
+            
+            extensions = list(map(lambda f: "/" + os.path.relpath(f, self.web_root).replace("\\", "/"), files))
+            
+            for name, dir in nodes.EXTENSION_WEB_DIRS.items():
+                files = glob.glob(os.path.join(dir, '**/*.js'), recursive=True)
+                extensions.extend(list(map(lambda f: "/extensions/" + urllib.parse.quote(
+                    name) + "/" + os.path.relpath(f, dir).replace("\\", "/"), files)))
+
+            return web.json_response(extensions)
 
         def get_dir_by_type(dir_type):
             if dir_type is None:
@@ -366,6 +397,11 @@ class PromptServer():
             vram_total, torch_vram_total = comfy.model_management.get_total_memory(device, torch_total_too=True)
             vram_free, torch_vram_free = comfy.model_management.get_free_memory(device, torch_free_too=True)
             system_stats = {
+                "system": {
+                    "os": os.name,
+                    "python_version": sys.version,
+                    "embedded_python": os.path.split(os.path.split(sys.executable)[0])[1] == "python_embeded"
+                },
                 "devices": [
                     {
                         "name": device_name,
@@ -442,6 +478,7 @@ class PromptServer():
             resp_code = 200
             out_string = ""
             json_data =  await request.json()
+            json_data = self.trigger_on_prompt(json_data)
 
             if "number" in json_data:
                 number = float(json_data['number'])
@@ -505,7 +542,8 @@ class PromptServer():
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
-                    return web.json_response({"prompt_id": prompt_id, "number": number})
+                    response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
+                    return web.json_response(response)
                 else:
                     print("invalid prompt:", valid[1])
                     ## Edit on Block handling invalid prompts 
@@ -697,6 +735,12 @@ class PromptServer():
 
     def add_routes(self):
         self.app.add_routes(self.routes)
+
+        for name, dir in nodes.EXTENSION_WEB_DIRS.items():
+            self.app.add_routes([
+                web.static('/extensions/' + urllib.parse.quote(name), dir, follow_symlinks=True),
+            ])
+
         self.app.add_routes([
             web.static('/', self.web_root, follow_symlinks=True),
         ])
@@ -709,7 +753,9 @@ class PromptServer():
         return prompt_info
 
     async def send(self, event, data, sid=None):
-        if isinstance(data, (bytes, bytearray)):
+        if event == BinaryEventTypes.UNENCODED_PREVIEW_IMAGE:
+            await self.send_image(data, sid=sid)
+        elif isinstance(data, (bytes, bytearray)):
             await self.send_bytes(event, data, sid)
         else:
             await self.send_json(event, data, sid)
@@ -722,6 +768,30 @@ class PromptServer():
         message = bytearray(packed)
         message.extend(data)
         return message
+
+    async def send_image(self, image_data, sid=None):
+        image_type = image_data[0]
+        image = image_data[1]
+        max_size = image_data[2]
+        if max_size is not None:
+            if hasattr(Image, 'Resampling'):
+                resampling = Image.Resampling.BILINEAR
+            else:
+                resampling = Image.ANTIALIAS
+
+            image = ImageOps.contain(image, (max_size, max_size), resampling)
+        type_num = 1
+        if image_type == "JPEG":
+            type_num = 1
+        elif image_type == "PNG":
+            type_num = 2
+
+        bytesIO = BytesIO()
+        header = struct.pack(">I", type_num)
+        bytesIO.write(header)
+        image.save(bytesIO, format=image_type, quality=95, compress_level=4)
+        preview_bytes = bytesIO.getvalue()
+        await self.send_bytes(BinaryEventTypes.PREVIEW_IMAGE, preview_bytes, sid=sid)
 
     async def send_bytes(self, event, data, sid=None):
         message = self.encode_bytes(event, data)
@@ -806,3 +876,16 @@ class PromptServer():
             print(f"Using pipe with id {id(self.pipe)} to send message")
             self.pipe.send('ready')
             call_on_start(address, port)
+
+    def add_on_prompt_handler(self, handler):
+        self.on_prompt_handlers.append(handler)
+
+    def trigger_on_prompt(self, json_data):
+        for handler in self.on_prompt_handlers:
+            try:
+                json_data = handler(json_data)
+            except Exception as e:
+                print(f"[ERROR] An error occurred during the on_prompt_handler processing")
+                traceback.print_exc()
+
+        return json_data

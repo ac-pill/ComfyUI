@@ -4,18 +4,20 @@ import struct
 import comfy.checkpoint_pickle
 import safetensors.torch
 
-def load_torch_file(ckpt, safe_load=False):
+def load_torch_file(ckpt, safe_load=False, device=None):
+    if device is None:
+        device = torch.device("cpu")
     if ckpt.lower().endswith(".safetensors"):
-        sd = safetensors.torch.load_file(ckpt, device="cpu")
+        sd = safetensors.torch.load_file(ckpt, device=device.type)
     else:
         if safe_load:
             if not 'weights_only' in torch.load.__code__.co_varnames:
                 print("Warning torch.load doesn't support weights_only on this pytorch version, loading unsafely.")
                 safe_load = False
         if safe_load:
-            pl_sd = torch.load(ckpt, map_location="cpu", weights_only=True)
+            pl_sd = torch.load(ckpt, map_location=device, weights_only=True)
         else:
-            pl_sd = torch.load(ckpt, map_location="cpu", pickle_module=comfy.checkpoint_pickle)
+            pl_sd = torch.load(ckpt, map_location=device, pickle_module=comfy.checkpoint_pickle)
         if "global_step" in pl_sd:
             print(f"Global Step: {pl_sd['global_step']}")
         if "state_dict" in pl_sd:
@@ -29,6 +31,13 @@ def save_torch_file(sd, ckpt, metadata=None):
         safetensors.torch.save_file(sd, ckpt, metadata=metadata)
     else:
         safetensors.torch.save_file(sd, ckpt)
+
+def calculate_parameters(sd, prefix=""):
+    params = 0
+    for k in sd.keys():
+        if k.startswith(prefix):
+            params += sd[k].nelement()
+    return params
 
 def transformers_convert(sd, prefix_from, prefix_to, number):
     keys_to_replace = {
@@ -118,20 +127,24 @@ UNET_MAP_RESNET = {
 }
 
 UNET_MAP_BASIC = {
-    "label_emb.0.0.weight": "class_embedding.linear_1.weight",
-    "label_emb.0.0.bias": "class_embedding.linear_1.bias",
-    "label_emb.0.2.weight": "class_embedding.linear_2.weight",
-    "label_emb.0.2.bias": "class_embedding.linear_2.bias",
-    "input_blocks.0.0.weight": "conv_in.weight",
-    "input_blocks.0.0.bias": "conv_in.bias",
-    "out.0.weight": "conv_norm_out.weight",
-    "out.0.bias": "conv_norm_out.bias",
-    "out.2.weight": "conv_out.weight",
-    "out.2.bias": "conv_out.bias",
-    "time_embed.0.weight": "time_embedding.linear_1.weight",
-    "time_embed.0.bias": "time_embedding.linear_1.bias",
-    "time_embed.2.weight": "time_embedding.linear_2.weight",
-    "time_embed.2.bias": "time_embedding.linear_2.bias"
+    ("label_emb.0.0.weight", "class_embedding.linear_1.weight"),
+    ("label_emb.0.0.bias", "class_embedding.linear_1.bias"),
+    ("label_emb.0.2.weight", "class_embedding.linear_2.weight"),
+    ("label_emb.0.2.bias", "class_embedding.linear_2.bias"),
+    ("label_emb.0.0.weight", "add_embedding.linear_1.weight"),
+    ("label_emb.0.0.bias", "add_embedding.linear_1.bias"),
+    ("label_emb.0.2.weight", "add_embedding.linear_2.weight"),
+    ("label_emb.0.2.bias", "add_embedding.linear_2.bias"),
+    ("input_blocks.0.0.weight", "conv_in.weight"),
+    ("input_blocks.0.0.bias", "conv_in.bias"),
+    ("out.0.weight", "conv_norm_out.weight"),
+    ("out.0.bias", "conv_norm_out.bias"),
+    ("out.2.weight", "conv_out.weight"),
+    ("out.2.bias", "conv_out.bias"),
+    ("time_embed.0.weight", "time_embedding.linear_1.weight"),
+    ("time_embed.0.bias", "time_embedding.linear_1.bias"),
+    ("time_embed.2.weight", "time_embedding.linear_2.weight"),
+    ("time_embed.2.bias", "time_embedding.linear_2.bias")
 }
 
 def unet_to_diffusers(unet_config):
@@ -206,7 +219,7 @@ def unet_to_diffusers(unet_config):
             n += 1
 
     for k in UNET_MAP_BASIC:
-        diffusers_unet_map[UNET_MAP_BASIC[k]] = k
+        diffusers_unet_map[k[1]] = k[0]
 
     return diffusers_unet_map
 
@@ -223,6 +236,20 @@ def safetensors_header(safetensors_path, max_size=100*1024*1024):
         if length_of_header > max_size:
             return None
         return f.read(length_of_header)
+
+def set_attr(obj, attr, value):
+    attrs = attr.split(".")
+    for name in attrs[:-1]:
+        obj = getattr(obj, name)
+    prev = getattr(obj, attrs[-1])
+    setattr(obj, attrs[-1], torch.nn.Parameter(value))
+    del prev
+
+def get_attr(obj, attr):
+    attrs = attr.split(".")
+    for name in attrs:
+        obj = getattr(obj, name)
+    return obj
 
 def bislerp(samples, width, height):
     def slerp(b1, b2, r):
