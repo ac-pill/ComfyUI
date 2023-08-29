@@ -87,7 +87,6 @@ class CLIP:
             params['dtype'] = torch.float32
 
         self.cond_stage_model = clip(**(params))
-        # self.device = load_device # Set device as attribute
 
         self.tokenizer = tokenizer(embedding_directory=embedding_directory)
         self.patcher = comfy.model_patcher.ModelPatcher(self.cond_stage_model, load_device=load_device, offload_device=offload_device)
@@ -99,7 +98,6 @@ class CLIP:
         n.cond_stage_model = self.cond_stage_model
         n.tokenizer = self.tokenizer
         n.layer_idx = self.layer_idx
-        n.device = self.device
         return n
 
     def add_patches(self, patches, strength_patch=1.0, strength_model=1.0):
