@@ -96,6 +96,7 @@ def start_server(child_conn, call_on_start=None):
 
     init_custom_nodes()
     prompt_server.add_routes() # Changing name for clarity
+    cuda_malloc_warning()
     hijack_progress(prompt_server) # Changing name for clarity
 
     print("Starting prompt_worker thread")
@@ -219,11 +220,6 @@ def main_func(args_dict, child_conn=None, cmdline=False):
     with open("temp_args.json", 'r') as f:
         this = json.load(f)
     print(f'JSON FILE CONTAINER:{this}')
-
-    init_custom_nodes()
-    cuda_malloc_warning()
-    server.add_routes()
-    hijack_progress(server)
 
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
