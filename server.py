@@ -697,18 +697,23 @@ class PromptServer():
                 buffer.seek(0)
                 data = buffer.read()
             elif img.mode == 'RGBA':
-                if img.mode == "RGBA":
-                    _, _, _, a = img.split()
-                else:
-                    a = Image.new('L', img.size, 255)
+                # if img.mode == "RGBA":
+                #     _, _, _, a = img.split()
+                # else:
+                #     a = Image.new('L', img.size, 255)
 
-                # alpha img
-                alpha_img = Image.new('RGBA', img.size)
-                alpha_img.putalpha(a)
-                alpha_buffer = BytesIO()
-                alpha_img.save(alpha_buffer, format='PNG')
-                alpha_buffer.seek(0)
-                data = alpha_buffer.read()
+                # # alpha img
+                # alpha_img = Image.new('RGBA', img.size)
+                # alpha_img.putalpha(a)
+                # alpha_buffer = BytesIO()
+                # alpha_img.save(alpha_buffer, format='PNG')
+                # alpha_buffer.seek(0)
+                
+                new_img = img.convert("RGBA")
+                img_buffer = BytesIO()
+                new_img.save(buffer, format='PNG')
+                img_buffer.seek(0)
+                data = img_buffer.read()
             else:
                 print(f"Unknown image mode for {filename}: {img.mode}")
                 continue 
@@ -721,16 +726,16 @@ class PromptServer():
             else:
                 print(f'Uploaded file {filename}: {response.content}')
             
-            response = requests.post(f'{server_id}{port}/executed', json=message)
-            if response.status_code != 200:
-                print(f'Failed to send message to bot: {response.content}')
-                # Add log
+        response = requests.post(f'{server_id}{port}/executed', json=message)
+        if response.status_code != 200:
+            print(f'Failed to send message to bot: {response.content}')
+            # Add log
+        else:
+            if response.text == "Bot Done":
+                print(response.text)
+                return True
             else:
-                if response.text == "Bot Done":
-                    print(response.text)
-                    return True
-                else:
-                    print(f'Unexpected response from bot: {response.text}')
+                print(f'Unexpected response from bot: {response.text}')
 
 
     def add_routes(self):
