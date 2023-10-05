@@ -711,7 +711,7 @@ class PromptServer():
                 
                 new_img = img.convert("RGBA")
                 img_buffer = BytesIO()
-                new_img.save(buffer, format='PNG')
+                new_img.save(img_buffer, format='PNG')
                 img_buffer.seek(0)
                 data = img_buffer.read()
             else:
