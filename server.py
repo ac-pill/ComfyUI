@@ -716,6 +716,8 @@ class PromptServer():
             else:
                 print(f'Uploaded file {filename}: {response.content}')
             
+            # Update Message with current filename
+            message['filenames'] = filename
             response = requests.post(f'{server_id}{port}/executed', json=message)
             if response.status_code != 200:
                 print(f'Failed to send message to bot: {response.content}')
