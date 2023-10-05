@@ -675,9 +675,11 @@ class PromptServer():
         # Loop over all filenames and upload each file
         print(f'Filenames on UPLOAD: {filenames}')
         output = folder_paths.get_output_directory()
+        count = 1
         for filename in filenames:
             filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
             print(f'FILE NAME: {filepath}')
+            print(f'Count {count}')
             # Load image
             img = Image.open(filepath)
 
@@ -697,18 +699,6 @@ class PromptServer():
                 buffer.seek(0)
                 data = buffer.read()
             elif img.mode == 'RGBA':
-                # if img.mode == "RGBA":
-                #     _, _, _, a = img.split()
-                # else:
-                #     a = Image.new('L', img.size, 255)
-
-                # # alpha img
-                # alpha_img = Image.new('RGBA', img.size)
-                # alpha_img.putalpha(a)
-                # alpha_buffer = BytesIO()
-                # alpha_img.save(alpha_buffer, format='PNG')
-                # alpha_buffer.seek(0)
-                
                 new_img = img.convert("RGBA")
                 img_buffer = BytesIO()
                 new_img.save(img_buffer, format='PNG')
@@ -731,11 +721,12 @@ class PromptServer():
                 print(f'Failed to send message to bot: {response.content}')
                 # Add log
             else:
-                error_count += 1
+                
                 if response.text == "Bot Done":
                     print(response.text)
                 else:
                     print(f'Unexpected response from bot: {response.text}')
+            count += 1
         return True
 
 
