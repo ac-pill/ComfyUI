@@ -731,11 +731,12 @@ class PromptServer():
                 print(f'Failed to send message to bot: {response.content}')
                 # Add log
             else:
+                error_count += 1
                 if response.text == "Bot Done":
                     print(response.text)
-                    return True
                 else:
                     print(f'Unexpected response from bot: {response.text}')
+        return True
 
 
     def add_routes(self):
