@@ -641,10 +641,10 @@ class PromptServer():
             result = self.upload_file(server_id, port, message)
             if result:
                 print("Completed Task successfully with Bot Server")
-                self.delete_images(message['filenames'])
+                # self.delete_images(message['filenames'])
             else:
                 print("Error completing Task with Bot Server")
-                self.delete_images(message['filenames'])
+                # self.delete_images(message['filenames'])
 
     ## Delete Images from Server
     def delete_images(self, filenames):
@@ -718,8 +718,10 @@ class PromptServer():
             response = requests.post(url, headers=headers, data=data)
             if response.status_code != 200:
                 print(f'Failed to upload file {filename}: {response.content}')
+                self.delete_images(filename)
             else:
                 print(f'Uploaded file {filename}: {response.content}')
+                self.delete_images(filename)
             
             # Update Message with current filename
             message['filenames'] = filename
