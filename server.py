@@ -647,8 +647,13 @@ class PromptServer():
                 self.delete_images(message['filenames'])
 
     ## Delete Images from Server
-    def delete_images(self, filenames: list):
+    def delete_images(self, filenames):
+        # Ensure filenames is a list
+        if isinstance(filenames, str):
+            filenames = [filenames]
+        # Get output folder
         output_directory = folder_paths.get_output_directory()
+        # Delete files
         for filename in filenames:
             file_path = os.path.join(output_directory, filename)
             try:
