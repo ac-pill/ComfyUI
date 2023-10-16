@@ -1,3 +1,6 @@
+import comfy.options
+comfy.options.enable_args_parsing()
+
 import os
 import importlib.util
 import folder_paths
@@ -51,7 +54,6 @@ import threading
 import gc
 
 from comfy.cli_args import Arguments
-import comfy.utils
 ## Start of Edit Block 1 ##
 
 import json
@@ -64,6 +66,7 @@ if os.name == "nt":
     import logging
     logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
+import comfy.utils
 import yaml
 
 import execution
@@ -106,6 +109,16 @@ def start_server(child_conn, call_on_start=None):
         output_dir = os.path.abspath(args.output_directory)
         print(f"Setting output directory to: {output_dir}")
         folder_paths.set_output_directory(output_dir)
+
+    #These are the default folders that checkpoints, clip and vae models will be saved to when using CheckpointSave, etc.. nodes
+    folder_paths.add_model_folder_path("checkpoints", os.path.join(folder_paths.get_output_directory(), "checkpoints"))
+    folder_paths.add_model_folder_path("clip", os.path.join(folder_paths.get_output_directory(), "clip"))
+    folder_paths.add_model_folder_path("vae", os.path.join(folder_paths.get_output_directory(), "vae"))
+
+    if args.input_directory:
+        input_dir = os.path.abspath(args.input_directory)
+        print(f"Setting input directory to: {input_dir}")
+        folder_paths.set_input_directory(input_dir)
 
     if args.quick_test_for_ci:
         exit(0)
@@ -152,9 +165,11 @@ async def run(server, address='', port=8188, verbose=True, call_on_start=None):
 
 def hijack_progress(server):
     def hook(value, total, preview_image):
+        comfy.model_management.throw_exception_if_processing_interrupted()
         server.send_sync("progress", {"value": value, "max": total}, server.client_id)
         if preview_image is not None:
             server.send_sync(BinaryEventTypes.UNENCODED_PREVIEW_IMAGE, preview_image, server.client_id)
+        print(f'Progress Hook:\nValue:{value}\nTotal:{total}')
     comfy.utils.set_progress_bar_global_hook(hook)
 
 
@@ -218,8 +233,8 @@ def main_func(args_dict, child_conn=None, cmdline=False):
 
     # For debugging temp args JSON File
     with open("temp_args.json", 'r') as f:
-        this = json.load(f)
-    print(f'JSON FILE CONTAINER:{this}')
+        tempargs = json.load(f)
+    print(f'JSON TEMP ARGS:{tempargs}')
 
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)

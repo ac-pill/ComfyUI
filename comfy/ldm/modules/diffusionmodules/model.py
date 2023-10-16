@@ -6,7 +6,6 @@ import numpy as np
 from einops import rearrange
 from typing import Optional, Any
 
-from ..attention import MemoryEfficientCrossAttention
 from comfy import model_management
 import comfy.ops
 
@@ -85,11 +84,10 @@ class Downsample(nn.Module):
                                         stride=2,
                                         padding=0)
 
-    def forward(self, x, already_padded=False):
+    def forward(self, x):
         if self.with_conv:
-            if not already_padded:
-                pad = (0,1,0,1)
-                x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
+            pad = (0,1,0,1)
+            x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
             x = self.conv(x)
         else:
             x = torch.nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
@@ -187,6 +185,7 @@ def slice_attention(q, k, v):
                 del s2
             break
         except model_management.OOM_EXCEPTION as e:
+            model_management.soft_empty_cache(True)
             steps *= 2
             if steps > 128:
                 raise e
@@ -352,20 +351,11 @@ class MemoryEfficientAttnBlockPytorch(nn.Module):
         out = self.proj_out(out)
         return x+out
 
-class MemoryEfficientCrossAttentionWrapper(MemoryEfficientCrossAttention):
-    def forward(self, x, context=None, mask=None):
-        b, c, h, w = x.shape
-        x = rearrange(x, 'b c h w -> b (h w) c')
-        out = super().forward(x, context=context, mask=mask)
-        out = rearrange(out, 'b (h w) c -> b c h w', h=h, w=w, c=c)
-        return x + out
-
-
 def make_attn(in_channels, attn_type="vanilla", attn_kwargs=None):
     assert attn_type in ["vanilla", "vanilla-xformers", "memory-efficient-cross-attn", "linear", "none"], f'attn_type {attn_type} unknown'
     if model_management.xformers_enabled_vae() and attn_type == "vanilla":
         attn_type = "vanilla-xformers"
-    if model_management.pytorch_attention_enabled() and attn_type == "vanilla":
+    elif model_management.pytorch_attention_enabled() and attn_type == "vanilla":
         attn_type = "vanilla-pytorch"
     print(f"making attention of type '{attn_type}' with {in_channels} in_channels")
     if attn_type == "vanilla":
@@ -376,9 +366,6 @@ def make_attn(in_channels, attn_type="vanilla", attn_kwargs=None):
         return MemoryEfficientAttnBlock(in_channels)
     elif attn_type == "vanilla-pytorch":
         return MemoryEfficientAttnBlockPytorch(in_channels)
-    elif type == "memory-efficient-cross-attn":
-        attn_kwargs["query_dim"] = in_channels
-        return MemoryEfficientCrossAttentionWrapper(**attn_kwargs)
     elif attn_type == "none":
         return nn.Identity(in_channels)
     else:
@@ -606,9 +593,6 @@ class Encoder(nn.Module):
     def forward(self, x):
         # timestep embedding
         temb = None
-        pad = (0,1,0,1)
-        x = torch.nn.functional.pad(x, pad, mode="constant", value=0)
-        already_padded = True
         # downsampling
         h = self.conv_in(x)
         for i_level in range(self.num_resolutions):
@@ -617,8 +601,7 @@ class Encoder(nn.Module):
                 if len(self.down[i_level].attn) > 0:
                     h = self.down[i_level].attn[i_block](h)
             if i_level != self.num_resolutions-1:
-                h = self.down[i_level].downsample(h, already_padded)
-                already_padded = False
+                h = self.down[i_level].downsample(h)
 
         # middle
         h = self.mid.block_1(h, temb)
