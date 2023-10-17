@@ -169,7 +169,6 @@ def hijack_progress(server):
         server.send_sync("progress", {"value": value, "max": total}, server.client_id)
         if preview_image is not None:
             server.send_sync(BinaryEventTypes.UNENCODED_PREVIEW_IMAGE, preview_image, server.client_id)
-        print(f'Progress Hook:\nValue:{value}\nTotal:{total}')
     comfy.utils.set_progress_bar_global_hook(hook)
 
 

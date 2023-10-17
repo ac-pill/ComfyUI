@@ -126,6 +126,7 @@ class PromptServer():
         self.msg_prompt = None ## Hold the prompt stated by user
         self.msg_neg_prompt = None ## Hold the negative prompt stated by user
         self.msg_seed = None ## Hold the seed stated by user
+        self.node_count = 0 ## Hold the total node count
 
         self.on_prompt_handlers = []
 
@@ -542,12 +543,15 @@ class PromptServer():
                     prompt_id = str(uuid.uuid4())
                     self.prompt_id = prompt_id
                     outputs_to_execute = valid[2]
+                    self.node_count = 0
                     self.user_prompt_map[prompt_id] = {
                         "user_id": user_id,
                         "channel_id": channel_id,
                         "server_id": server_id,
                         "port": port
                     }
+                    print(f'OUTPUTS to EXECUTE: {outputs_to_execute}')
+
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
@@ -624,6 +628,20 @@ class PromptServer():
             if 'filenames' in data:
                 self.delete_images(data['filenames'])
             return web.Response(status=200)
+        
+        ## Status Process
+        @routes.get("/procstat")
+        async def procstat(request):
+            procinfo = {}
+            current_id = self.last_node_id
+            total = self.node_count
+            current = self.node_count
+    
+            procinfo['node_id_running'] = current_id
+            procinfo['node_n_running'] = current
+            procinfo['total'] = total
+            return web.json_response(procinfo)
+            
 
     ## Shutdown Server
     def shutdown(self, message=None):
