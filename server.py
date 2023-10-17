@@ -30,14 +30,31 @@ from comfy.cli_args import args
 import comfy.utils
 import comfy.model_management
 
-## Using Requests for Now, replace later with aiohttp
+## Start Block Change Using Requests for Now, replace later with aiohttp
 import requests
 import time
 
-## Using Requests for Now, replace later with aiohttp
-import requests
-import time
+class NodeProgressTracker:
+    def __init__(self, nodes):
+        self.nodes = nodes  # all nodes
+        self.executed_nodes = []  # list to keep track of executed nodes
 
+    def mark_as_executed(self, node_id):
+        """Mark a node as executed."""
+        if node_id not in self.executed_nodes:
+            self.executed_nodes.append(node_id)
+
+    def get_progress_percentage(self):
+        """Calculate and return the progress percentage."""
+        executed_count = len(self.executed_nodes)
+        total_count = len(self.nodes)
+        return (executed_count / total_count) * 100
+    
+    def get_total(self):
+        """Get total node count."""
+        total_count = len(self.nodes)
+        return total_count
+## End Block Change
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
@@ -126,7 +143,8 @@ class PromptServer():
         self.msg_prompt = None ## Hold the prompt stated by user
         self.msg_neg_prompt = None ## Hold the negative prompt stated by user
         self.msg_seed = None ## Hold the seed stated by user
-        self.node_count = 0 ## Hold the total node count
+        self.node_list = [] ## Hold the total node count
+        self.tracker = None ## Hold the tracker class
 
         self.on_prompt_handlers = []
 
@@ -543,16 +561,19 @@ class PromptServer():
                     prompt_id = str(uuid.uuid4())
                     self.prompt_id = prompt_id
                     outputs_to_execute = valid[2]
-                    self.node_count = 0
+                    ## instantiate tracker
+                    self.node_list = list(prompt.keys())
+                    tracker = NodeProgressTracker(self.node_list)
+                    ## Continue with message assembling
                     self.user_prompt_map[prompt_id] = {
                         "user_id": user_id,
                         "channel_id": channel_id,
                         "server_id": server_id,
                         "port": port
                     }
-
+                    print(f'VALID: {valid}')
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
-                    print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
+                    # print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
                     response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
                     return web.json_response(response)
@@ -632,13 +653,9 @@ class PromptServer():
         @routes.get("/procstat")
         async def procstat(request):
             procinfo = {}
-            current_id = self.last_node_id
-            total = self.node_count
-            current = self.node_count
-    
-            procinfo['node_id_running'] = current_id
-            procinfo['node_n_running'] = current
-            procinfo['total'] = total
+            procinfo['node_id_running'] = self.last_node_id
+            procinfo['percentage'] = self.tracker.get_progress_percentage()
+            procinfo['total'] = self.tracker.get_progress_percentage()
             return web.json_response(procinfo)
             
 
@@ -849,6 +866,10 @@ class PromptServer():
         print(f'EVENT: {event}')
         print(f'DATA: {data}')
         print(f'LAST NODE: {self.last_node_id}')
+        # Get last node and add to executed
+        if self.last_node_id is not None:
+            self.tracker.mark_as_executed(self.last_node_id)
+            print(f"Progress: {self.tracker.get_progress_percentage()}%")
         # Get the prompt_id
         prompt_id = self.prompt_id
         # Check if the event is 'executed' (i.e., a node has been executed)
