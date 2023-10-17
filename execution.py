@@ -174,6 +174,7 @@ def recursive_execute(server, prompt, outputs, current_item, extra_data, execute
         input_data_formatted = {}
         if input_data_all is not None:
             input_data_formatted = {}
+            print(f'INPUT ALL DATA: {input_data_all.items()}\nINPUT COUNT: {len(input_data_all.items())}')
             for name, inputs in input_data_all.items():
                 input_data_formatted[name] = [format_value(x) for x in inputs]
 
