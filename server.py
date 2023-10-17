@@ -550,7 +550,6 @@ class PromptServer():
                         "server_id": server_id,
                         "port": port
                     }
-                    print(f'OUTPUTS to EXECUTE: {outputs_to_execute}')
 
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
@@ -849,6 +848,7 @@ class PromptServer():
         ## Error not all events are tracked
         print(f'EVENT: {event}')
         print(f'DATA: {data}')
+        print(f'LAST NODE: {self.last_node_id}')
         # Get the prompt_id
         prompt_id = self.prompt_id
         # Check if the event is 'executed' (i.e., a node has been executed)
