@@ -16,3 +16,4 @@ web/extensions/*
 !web/extensions/core/
 
 temp_args.json
+handler.py
