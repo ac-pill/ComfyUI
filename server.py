@@ -563,7 +563,8 @@ class PromptServer():
                     outputs_to_execute = valid[2]
                     ## instantiate tracker
                     self.node_list = list(prompt.keys())
-                    tracker = NodeProgressTracker(self.node_list)
+                    print(f'NODE LIST: {self.node_list}')
+                    self.tracker = NodeProgressTracker(self.node_list)
                     ## Continue with message assembling
                     self.user_prompt_map[prompt_id] = {
                         "user_id": user_id,
