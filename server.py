@@ -48,12 +48,16 @@ class NodeProgressTracker:
         """Calculate and return the progress percentage."""
         executed_count = len(self.executed_nodes)
         total_count = len(self.nodes)
-        return (executed_count / total_count) * 100
+        return int((executed_count / total_count) * 100)
     
     def get_total(self):
         """Get total node count."""
         total_count = len(self.nodes)
         return total_count
+    
+    def unprocessed_nodes(self):
+        """Return a list of nodes that haven't been processed."""
+        return [node for node in self.nodes if node not in self.executed_nodes]
 ## End Block Change
 
 class BinaryEventTypes:
@@ -654,9 +658,19 @@ class PromptServer():
         @routes.get("/procstat")
         async def procstat(request):
             procinfo = {}
-            procinfo['node_id_running'] = self.last_node_id
-            procinfo['percentage'] = self.tracker.get_progress_percentage()
-            procinfo['total'] = self.tracker.get_progress_percentage()
+            current = self.last_node_id
+            if current is None:
+                procinfo['status'] = 'idle'
+                procinfo['current_node'] = None
+                procinfo['percentage'] = 100
+                procinfo['total'] = self.tracker.get_total()
+                procinfo['cached'] = self.tracker.unprocessed_nodes()
+            else:
+                procinfo['status'] = 'running'
+                procinfo['current_node'] = current
+                procinfo['percentage'] = self.tracker.get_progress_percentage()
+                procinfo['total'] = self.tracker.get_total()
+                procinfo['cached'] = None
             return web.json_response(procinfo)
             
 
@@ -871,6 +885,7 @@ class PromptServer():
         if self.last_node_id is not None:
             self.tracker.mark_as_executed(self.last_node_id)
             print(f"Progress: {self.tracker.get_progress_percentage()}%")
+        # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
         # Get the prompt_id
         prompt_id = self.prompt_id
         # Check if the event is 'executed' (i.e., a node has been executed)
