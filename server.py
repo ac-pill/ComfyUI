@@ -657,21 +657,7 @@ class PromptServer():
         ## Status Process
         @routes.get("/procstat")
         async def procstat(request):
-            procinfo = {}
-            current = self.last_node_id
-            if current is None:
-                procinfo['status'] = 'idle'
-                procinfo['current_node'] = None
-                procinfo['percentage'] = 100
-                procinfo['total'] = self.tracker.get_total()
-                procinfo['cached'] = self.tracker.unprocessed_nodes()
-            else:
-                procinfo['status'] = 'running'
-                procinfo['current_node'] = current
-                procinfo['percentage'] = self.tracker.get_progress_percentage()
-                procinfo['total'] = self.tracker.get_total()
-                procinfo['cached'] = None
-            return web.json_response(procinfo)
+            return web.json_response(await self.get_proc_info())
             
 
     ## Shutdown Server
@@ -703,6 +689,41 @@ class PromptServer():
             else:
                 print("Error completing Task with Bot Server")
                 # self.delete_images(message['filenames'])
+
+    ## Send Status
+    async def get_proc_info(self):
+        procinfo = {}
+        current = self.last_node_id
+        if current is None:
+            procinfo['status'] = 'idle'
+            procinfo['current_node'] = None
+            procinfo['percentage'] = 100
+            procinfo['total'] = self.tracker.get_total()
+            procinfo['cached'] = self.tracker.unprocessed_nodes()
+        else:
+            procinfo['status'] = 'running'
+            procinfo['current_node'] = current
+            procinfo['percentage'] = self.tracker.get_progress_percentage()
+            procinfo['total'] = self.tracker.get_total()
+            procinfo['cached'] = None
+        return procinfo
+    
+    async def procstat_post(self):
+            procinfo = await self.get_proc_info()
+            server_id = self.user_prompt_map[self.prompt_id]["server_id"]
+            port = self.user_prompt_map[self.prompt_id]["port"]
+            try:
+                # Using the aiohttp ClientSession from your existing imports
+                async with aiohttp.ClientSession() as session:
+                    response = await session.post(f'{server_id}{port}/status', json=procinfo)
+                    if response.status == 200:
+                        response_text = await response.text()
+                        print(response_text)
+                    else:
+                        print(f"Received a {response.status} status code from the bot.")
+            except Exception as e:
+                print("Failed to send POST to bot.", traceback.format_exc())
+            return web.json_response(procinfo)
 
     ## Delete Images from Server
     def delete_images(self, filenames):
@@ -885,6 +906,7 @@ class PromptServer():
         if self.last_node_id is not None:
             self.tracker.mark_as_executed(self.last_node_id)
             print(f"Progress: {self.tracker.get_progress_percentage()}%")
+            self.procstat_post()
         # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
         # Get the prompt_id
         prompt_id = self.prompt_id
