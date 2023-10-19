@@ -35,7 +35,8 @@ import requests
 import time
 
 class NodeProgressTracker:
-    def __init__(self, nodes, server_id, port):
+    def __init__(self, loop, nodes, server_id, port):
+        self.loop = loop
         self.nodes = nodes  # all nodes
         self.executed_nodes = []  # list to keep track of executed nodes
         self.server_id = server_id
@@ -81,8 +82,7 @@ class NodeProgressTracker:
     
     # Post Status
     def procstat_post(self, last_node_id):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.a_procstat_post(last_node_id))
+        self.loop.run_until_complete(self.a_procstat_post(last_node_id))
 
     async def a_procstat_post(self, last_node_id):
             procinfo = self.get_proc_info(last_node_id)
@@ -613,7 +613,7 @@ class PromptServer():
                     ## instantiate tracker
                     self.node_list = list(prompt.keys())
                     print(f'NODE LIST: {self.node_list}')
-                    self.tracker = NodeProgressTracker(self.node_list, server_id, port)
+                    self.tracker = NodeProgressTracker(loop, self.node_list, server_id, port)
                     ## Continue with message assembling
                     self.user_prompt_map[prompt_id] = {
                         "user_id": user_id,
