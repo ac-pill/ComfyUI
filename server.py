@@ -35,9 +35,11 @@ import requests
 import time
 
 class NodeProgressTracker:
-    def __init__(self, nodes):
+    def __init__(self, nodes, server_id, port):
         self.nodes = nodes  # all nodes
         self.executed_nodes = []  # list to keep track of executed nodes
+        self.server_id = server_id
+        self.port = port
 
     def mark_as_executed(self, node_id):
         """Mark a node as executed."""
@@ -58,6 +60,49 @@ class NodeProgressTracker:
     def unprocessed_nodes(self):
         """Return a list of nodes that haven't been processed."""
         return [node for node in self.nodes if node not in self.executed_nodes]
+
+    # Send Status
+    def get_proc_info(self, last_node_id):
+        procinfo = {}
+        current = last_node_id
+        if current is None:
+            procinfo['status'] = 'idle'
+            procinfo['current_node'] = None
+            procinfo['percentage'] = 100
+            procinfo['total'] = self.tracker.get_total()
+            procinfo['cached'] = self.tracker.unprocessed_nodes()
+        else:
+            procinfo['status'] = 'running'
+            procinfo['current_node'] = current
+            procinfo['percentage'] = self.tracker.get_progress_percentage()
+            procinfo['total'] = self.tracker.get_total()
+            procinfo['cached'] = None
+        return procinfo
+    
+    # Post Status
+    def procstat_post(self, last_node_id):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.a_procstat_post(last_node_id))
+
+    async def a_procstat_post(self, last_node_id):
+            procinfo = self.get_proc_info(last_node_id)
+            server_id = self.user_prompt_map[self.prompt_id]["server_id"]
+            port = self.user_prompt_map[self.prompt_id]["port"]
+            try:
+                # Using the aiohttp ClientSession from your existing imports
+                async with aiohttp.ClientSession() as session:
+                    response = await session.post(f'{server_id}{port}/status', json=procinfo)
+                    if response.status == 200:
+                        response_text = await response.text()
+                        print(response_text)
+                    else:
+                        print(f"Received a {response.status} status code from the bot.")
+            except Exception as e:
+                print("Failed to send POST to bot.", traceback.format_exc())
+            return web.json_response(procinfo)
+
+    
+
 ## End Block Change
 
 class BinaryEventTypes:
@@ -568,7 +613,7 @@ class PromptServer():
                     ## instantiate tracker
                     self.node_list = list(prompt.keys())
                     print(f'NODE LIST: {self.node_list}')
-                    self.tracker = NodeProgressTracker(self.node_list)
+                    self.tracker = NodeProgressTracker(self.node_list, server_id, port)
                     ## Continue with message assembling
                     self.user_prompt_map[prompt_id] = {
                         "user_id": user_id,
@@ -657,7 +702,7 @@ class PromptServer():
         ## Status Process
         @routes.get("/procstat")
         async def procstat(request):
-            return web.json_response(await self.get_proc_info())
+            return web.json_response(self.tracker.get_proc_info(self.last_node_id))
             
 
     ## Shutdown Server
@@ -689,41 +734,6 @@ class PromptServer():
             else:
                 print("Error completing Task with Bot Server")
                 # self.delete_images(message['filenames'])
-
-    ## Send Status
-    async def get_proc_info(self):
-        procinfo = {}
-        current = self.last_node_id
-        if current is None:
-            procinfo['status'] = 'idle'
-            procinfo['current_node'] = None
-            procinfo['percentage'] = 100
-            procinfo['total'] = self.tracker.get_total()
-            procinfo['cached'] = self.tracker.unprocessed_nodes()
-        else:
-            procinfo['status'] = 'running'
-            procinfo['current_node'] = current
-            procinfo['percentage'] = self.tracker.get_progress_percentage()
-            procinfo['total'] = self.tracker.get_total()
-            procinfo['cached'] = None
-        return procinfo
-    
-    async def procstat_post(self):
-            procinfo = await self.get_proc_info()
-            server_id = self.user_prompt_map[self.prompt_id]["server_id"]
-            port = self.user_prompt_map[self.prompt_id]["port"]
-            try:
-                # Using the aiohttp ClientSession from your existing imports
-                async with aiohttp.ClientSession() as session:
-                    response = await session.post(f'{server_id}{port}/status', json=procinfo)
-                    if response.status == 200:
-                        response_text = await response.text()
-                        print(response_text)
-                    else:
-                        print(f"Received a {response.status} status code from the bot.")
-            except Exception as e:
-                print("Failed to send POST to bot.", traceback.format_exc())
-            return web.json_response(procinfo)
 
     ## Delete Images from Server
     def delete_images(self, filenames):
@@ -906,7 +916,7 @@ class PromptServer():
         if self.last_node_id is not None:
             self.tracker.mark_as_executed(self.last_node_id)
             print(f"Progress: {self.tracker.get_progress_percentage()}%")
-            self.procstat_post()
+            self.tracker.procstat_post(self.last_node_id)
         # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
         # Get the prompt_id
         prompt_id = self.prompt_id
