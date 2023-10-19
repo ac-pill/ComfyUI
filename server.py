@@ -12,6 +12,7 @@ import json
 import glob
 import struct
 from PIL import Image, ImageOps
+from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
 
 try:
@@ -29,14 +30,91 @@ from comfy.cli_args import args
 import comfy.utils
 import comfy.model_management
 
-## Using Requests for Now, replace later with aiohttp
+## Start Block Change Using Requests for Now, replace later with aiohttp
 import requests
 import time
 
-## Using Requests for Now, replace later with aiohttp
-import requests
-import time
+class NodeProgressTracker:
+    def __init__(self, loop, nodes, server_id, port):
+        self.loop = loop
+        self.nodes = nodes # All nodes list
+        self.executed_nodes = []
+        self.server_id = server_id
+        self.port = port
+        self.queue = asyncio.Queue()
 
+    def mark_as_executed(self, node_id):
+        """Mark a node as executed."""
+        if node_id not in self.executed_nodes:
+            self.executed_nodes.append(node_id)
+
+    def get_progress_percentage(self):
+        """Calculate and return the progress percentage."""
+        executed_count = len(self.executed_nodes)
+        total_count = len(self.nodes)
+        return int((executed_count / total_count) * 100)
+    
+    def get_total(self):
+        """Get total node count."""
+        total_count = len(self.nodes)
+        return total_count
+    
+    def unprocessed_nodes(self):
+        """Return a list of nodes that haven't been processed."""
+        return [node for node in self.nodes if node not in self.executed_nodes]
+
+    # Send Status
+    def get_proc_info(self, last_node_id):
+        procinfo = {}
+        current = last_node_id
+        if current is None:
+            procinfo['status'] = 'idle'
+            procinfo['current_node'] = None
+            procinfo['percentage'] = 100
+            procinfo['total'] = self.get_total()
+            procinfo['cached'] = self.unprocessed_nodes()
+        else:
+            procinfo['status'] = 'running'
+            procinfo['current_node'] = current
+            procinfo['percentage'] = self.get_progress_percentage()
+            procinfo['total'] = self.get_total()
+            procinfo['cached'] = None
+        return procinfo
+    
+    # Post Status
+    def procstat_post(self, last_node_id):
+        # asyncio.run_coroutine_threadsafe(self.a_procstat_post(last_node_id), self.loop)
+        print('Start ProcStat')
+        if last_node_id not in self.executed_nodes:
+            print(f'PROCSTAT TRIGGERED: {last_node_id}')
+            self.queue.put_nowait(last_node_id)
+            asyncio.run_coroutine_threadsafe(self.handle_queue(), self.loop)
+
+    async def handle_queue(self):
+        while not self.queue.empty():
+            last_node_id = await self.queue.get()
+            await self.a_procstat_post(last_node_id)
+            self.queue.task_done()
+
+    async def a_procstat_post(self, last_node_id):
+            procinfo = self.get_proc_info(last_node_id)
+            server_id = self.server_id
+            port = self.port
+            print(f'POSTING Progress: {server_id}{port}/status')
+            try:
+                # Using the aiohttp ClientSession from your existing imports
+                async with aiohttp.ClientSession() as session:
+                    response = await session.post(f'{server_id}{port}/status', json=procinfo)
+                    if response.status == 200:
+                        response_text = await response.text()
+                        print(response_text)
+                    else:
+                        print(f"Received a {response.status} status code from the bot.")
+            except Exception as e:
+                print("Failed to send POST to bot.", traceback.format_exc())
+            return web.json_response(procinfo)
+
+## End Block Change
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
@@ -125,6 +203,8 @@ class PromptServer():
         self.msg_prompt = None ## Hold the prompt stated by user
         self.msg_neg_prompt = None ## Hold the negative prompt stated by user
         self.msg_seed = None ## Hold the seed stated by user
+        self.node_list = [] ## Hold the total node count
+        self.tracker = None ## Hold the tracker class
 
         self.on_prompt_handlers = []
 
@@ -162,17 +242,17 @@ class PromptServer():
         @routes.get("/embeddings")
         def get_embeddings(self):
             embeddings = folder_paths.get_filename_list("embeddings")
-            return web.json_response(list(map(lambda a: os.path.splitext(a)[0].lower(), embeddings)))
+            return web.json_response(list(map(lambda a: os.path.splitext(a)[0], embeddings)))
 
         @routes.get("/extensions")
         async def get_extensions(request):
             files = glob.glob(os.path.join(
-                self.web_root, 'extensions/**/*.js'), recursive=True)
+                glob.escape(self.web_root), 'extensions/**/*.js'), recursive=True)
             
             extensions = list(map(lambda f: "/" + os.path.relpath(f, self.web_root).replace("\\", "/"), files))
             
             for name, dir in nodes.EXTENSION_WEB_DIRS.items():
-                files = glob.glob(os.path.join(dir, '**/*.js'), recursive=True)
+                files = glob.glob(os.path.join(glob.escape(dir), '**/*.js'), recursive=True)
                 extensions.extend(list(map(lambda f: "/extensions/" + urllib.parse.quote(
                     name) + "/" + os.path.relpath(f, dir).replace("\\", "/"), files)))
 
@@ -205,15 +285,15 @@ class PromptServer():
 
                 subfolder = post.get("subfolder", "")
                 full_output_folder = os.path.join(upload_dir, os.path.normpath(subfolder))
+                filepath = os.path.abspath(os.path.join(full_output_folder, filename))
 
-                if os.path.commonpath((upload_dir, os.path.abspath(full_output_folder))) != upload_dir:
+                if os.path.commonpath((upload_dir, filepath)) != upload_dir:
                     return web.Response(status=400)
 
                 if not os.path.exists(full_output_folder):
                     os.makedirs(full_output_folder)
 
                 split = os.path.splitext(filename)
-                filepath = os.path.join(full_output_folder, filename)
 
                 if overwrite is not None and (overwrite == "true" or overwrite == "1"):
                     pass
@@ -269,13 +349,17 @@ class PromptServer():
 
                 if os.path.isfile(file):
                     with Image.open(file) as original_pil:
+                        metadata = PngInfo()
+                        if hasattr(original_pil,'text'):
+                            for key in original_pil.text:
+                                metadata.add_text(key, original_pil.text[key])
                         original_pil = original_pil.convert('RGBA')
                         mask_pil = Image.open(image.file).convert('RGBA')
 
                         # alpha copy
                         new_alpha = mask_pil.getchannel('A')
                         original_pil.putalpha(new_alpha)
-                        original_pil.save(filepath, compress_level=4)
+                        original_pil.save(filepath, compress_level=4, pnginfo=metadata)
 
             return image_upload(post, image_save_function)
 
@@ -429,7 +513,7 @@ class PromptServer():
             info['output_name'] = obj_class.RETURN_NAMES if hasattr(obj_class, 'RETURN_NAMES') else info['output']
             info['name'] = node_class
             info['display_name'] = nodes.NODE_DISPLAY_NAME_MAPPINGS[node_class] if node_class in nodes.NODE_DISPLAY_NAME_MAPPINGS.keys() else node_class
-            info['description'] = ''
+            info['description'] = obj_class.DESCRIPTION if hasattr(obj_class,'DESCRIPTION') else ''
             info['category'] = 'sd'
             if hasattr(obj_class, 'OUTPUT_NODE') and obj_class.OUTPUT_NODE == True:
                 info['output_node'] = True
@@ -444,7 +528,11 @@ class PromptServer():
         async def get_object_info(request):
             out = {}
             for x in nodes.NODE_CLASS_MAPPINGS:
-                out[x] = node_info(x)
+                try:
+                    out[x] = node_info(x)
+                except Exception as e:
+                    print(f"[ERROR] An error occurred while retrieving information for the '{x}' node.", file=sys.stderr)
+                    traceback.print_exc()
             return web.json_response(out)
 
         @routes.get("/object_info/{node_class}")
@@ -533,14 +621,20 @@ class PromptServer():
                     prompt_id = str(uuid.uuid4())
                     self.prompt_id = prompt_id
                     outputs_to_execute = valid[2]
+                    ## instantiate tracker
+                    self.node_list = list(prompt.keys())
+                    print(f'NODE LIST: {self.node_list}')
+                    self.tracker = NodeProgressTracker(loop, self.node_list, server_id, port)
+                    ## Continue with message assembling
                     self.user_prompt_map[prompt_id] = {
                         "user_id": user_id,
                         "channel_id": channel_id,
                         "server_id": server_id,
                         "port": port
                     }
+                    print(f'VALID: {valid}')
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
-                    print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
+                    # print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
                     response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
                     return web.json_response(response)
@@ -615,6 +709,12 @@ class PromptServer():
             if 'filenames' in data:
                 self.delete_images(data['filenames'])
             return web.Response(status=200)
+        
+        ## Status Process
+        @routes.get("/procstat")
+        async def procstat(request):
+            return web.json_response(self.tracker.get_proc_info(self.last_node_id))
+            
 
     ## Shutdown Server
     def shutdown(self, message=None):
@@ -682,7 +782,7 @@ class PromptServer():
         output = folder_paths.get_output_directory()
         count = 1
         for filename in filenames:
-            filepath = os.path.join(output, filename) #need to use output_dir = folder_paths.get_directory_by_type(type)
+            filepath = os.path.join(output, filename) 
             print(f'FILE NAME: {filepath}')
             print(f'Count {count}')
             # Load image
@@ -822,6 +922,13 @@ class PromptServer():
         ## Error not all events are tracked
         print(f'EVENT: {event}')
         print(f'DATA: {data}')
+        print(f'LAST NODE: {self.last_node_id}')
+        # Get last node and add to executed
+        if self.last_node_id is not None:
+            self.tracker.procstat_post(self.last_node_id)
+            self.tracker.mark_as_executed(self.last_node_id)
+            print(f"Progress: {self.tracker.get_progress_percentage()}%")
+        # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
         # Get the prompt_id
         prompt_id = self.prompt_id
         # Check if the event is 'executed' (i.e., a node has been executed)
@@ -867,7 +974,7 @@ class PromptServer():
             await self.send(*msg)
 
     async def start(self, address, port, verbose=True, call_on_start=None):
-        runner = web.AppRunner(self.app)
+        runner = web.AppRunner(self.app, access_log=None)
         await runner.setup()
         site = web.TCPSite(runner, address, port)
         await site.start()
