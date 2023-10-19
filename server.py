@@ -70,13 +70,13 @@ class NodeProgressTracker:
             procinfo['status'] = 'idle'
             procinfo['current_node'] = None
             procinfo['percentage'] = 100
-            procinfo['total'] = self.tracker.get_total()
+            procinfo['total'] = self.get_total()
             procinfo['cached'] = self.tracker.unprocessed_nodes()
         else:
             procinfo['status'] = 'running'
             procinfo['current_node'] = current
-            procinfo['percentage'] = self.tracker.get_progress_percentage()
-            procinfo['total'] = self.tracker.get_total()
+            procinfo['percentage'] = self.get_progress_percentage()
+            procinfo['total'] = self.get_total()
             procinfo['cached'] = None
         return procinfo
     
@@ -101,8 +101,6 @@ class NodeProgressTracker:
             except Exception as e:
                 print("Failed to send POST to bot.", traceback.format_exc())
             return web.json_response(procinfo)
-
-    
 
 ## End Block Change
 
