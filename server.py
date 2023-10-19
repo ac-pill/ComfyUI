@@ -82,7 +82,12 @@ class NodeProgressTracker:
     
     # Post Status
     def procstat_post(self, last_node_id):
-        self.loop.run_until_complete(self.a_procstat_post(last_node_id))
+        # If loop is running, use await
+        if self.loop.is_running():
+            asyncio.ensure_future(self.a_procstat_post(last_node_id))
+        # If loop isn't running, use run_until_complete
+        else:
+            self.loop.run_until_complete(self.a_procstat_post(last_node_id))
 
     async def a_procstat_post(self, last_node_id):
             procinfo = self.get_proc_info(last_node_id)
