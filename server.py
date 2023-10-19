@@ -84,7 +84,9 @@ class NodeProgressTracker:
     # Post Status
     def procstat_post(self, last_node_id):
         # asyncio.run_coroutine_threadsafe(self.a_procstat_post(last_node_id), self.loop)
+        print('Start ProcStat')
         if last_node_id not in self.executed_nodes:
+            print(f'PROCSTAT TRIGGERED: {last_node_id}')
             self.queue.put_nowait(last_node_id)
             asyncio.run_coroutine_threadsafe(self.handle_queue(), self.loop)
 
