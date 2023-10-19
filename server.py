@@ -82,12 +82,7 @@ class NodeProgressTracker:
     
     # Post Status
     def procstat_post(self, last_node_id):
-        # If loop is running, use await
-        if self.loop.is_running():
-            asyncio.ensure_future(self.a_procstat_post(last_node_id))
-        # If loop isn't running, use run_until_complete
-        else:
-            self.loop.run_until_complete(self.a_procstat_post(last_node_id))
+        asyncio.run_coroutine_threadsafe(self.a_procstat_post(last_node_id), self.loop)
 
     async def a_procstat_post(self, last_node_id):
             procinfo = self.get_proc_info(last_node_id)
@@ -921,7 +916,7 @@ class PromptServer():
         if self.last_node_id is not None:
             self.tracker.mark_as_executed(self.last_node_id)
             print(f"Progress: {self.tracker.get_progress_percentage()}%")
-            asyncio.create_task(self.tracker.a_procstat_post(self.last_node_id))
+            self.tracker.a_procstat_post(self.last_node_id)
         # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
         # Get the prompt_id
         prompt_id = self.prompt_id
