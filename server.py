@@ -88,6 +88,7 @@ class NodeProgressTracker:
             procinfo = self.get_proc_info(last_node_id)
             server_id = self.server_id
             port = self.port
+            print(f'POSTING Progress: {server_id}{port}/status')
             try:
                 # Using the aiohttp ClientSession from your existing imports
                 async with aiohttp.ClientSession() as session:
