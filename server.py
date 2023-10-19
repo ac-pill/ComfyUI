@@ -37,10 +37,11 @@ import time
 class NodeProgressTracker:
     def __init__(self, loop, nodes, server_id, port):
         self.loop = loop
-        self.nodes = nodes  # all nodes
-        self.executed_nodes = []  # list to keep track of executed nodes
+        self.nodes = nodes # All nodes list
+        self.executed_nodes = []
         self.server_id = server_id
         self.port = port
+        self.queue = asyncio.Queue()
 
     def mark_as_executed(self, node_id):
         """Mark a node as executed."""
@@ -71,7 +72,7 @@ class NodeProgressTracker:
             procinfo['current_node'] = None
             procinfo['percentage'] = 100
             procinfo['total'] = self.get_total()
-            procinfo['cached'] = self.tracker.unprocessed_nodes()
+            procinfo['cached'] = self.unprocessed_nodes()
         else:
             procinfo['status'] = 'running'
             procinfo['current_node'] = current
@@ -82,7 +83,16 @@ class NodeProgressTracker:
     
     # Post Status
     def procstat_post(self, last_node_id):
-        asyncio.run_coroutine_threadsafe(self.a_procstat_post(last_node_id), self.loop)
+        # asyncio.run_coroutine_threadsafe(self.a_procstat_post(last_node_id), self.loop)
+        if last_node_id not in self.executed_nodes:
+            self.queue.put_nowait(last_node_id)
+            asyncio.run_coroutine_threadsafe(self.handle_queue(), self.loop)
+
+    async def handle_queue(self):
+        while not self.queue.empty():
+            last_node_id = await self.queue.get()
+            await self.a_procstat_post(last_node_id)
+            self.queue.task_done()
 
     async def a_procstat_post(self, last_node_id):
             procinfo = self.get_proc_info(last_node_id)
