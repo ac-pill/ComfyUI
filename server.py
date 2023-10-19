@@ -91,8 +91,8 @@ class NodeProgressTracker:
 
     async def a_procstat_post(self, last_node_id):
             procinfo = self.get_proc_info(last_node_id)
-            server_id = self.user_prompt_map[self.prompt_id]["server_id"]
-            port = self.user_prompt_map[self.prompt_id]["port"]
+            server_id = self.server_id
+            port = self.port
             try:
                 # Using the aiohttp ClientSession from your existing imports
                 async with aiohttp.ClientSession() as session:
@@ -921,7 +921,7 @@ class PromptServer():
         if self.last_node_id is not None:
             self.tracker.mark_as_executed(self.last_node_id)
             print(f"Progress: {self.tracker.get_progress_percentage()}%")
-            self.tracker.procstat_post(self.last_node_id)
+            asyncio.create_task(self.tracker.a_procstat_post(self.last_node_id))
         # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
         # Get the prompt_id
         prompt_id = self.prompt_id
