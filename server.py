@@ -34,6 +34,7 @@ import comfy.model_management
 import requests
 import time
 
+# Class Status Tracker
 class NodeProgressTracker:
     def __init__(self, loop, nodes, server_id, port):
         self.loop = loop
@@ -115,25 +116,6 @@ class NodeProgressTracker:
             return web.json_response(procinfo)
 
 ## End Block Change
-
-class BinaryEventTypes:
-    PREVIEW_IMAGE = 1
-
-async def send_socket_catch_exception(function, message):
-    try:
-        await function(message)
-    except (aiohttp.ClientError, aiohttp.ClientPayloadError, ConnectionResetError) as err:
-        print("send error:", err)
-
-class BinaryEventTypes:
-    PREVIEW_IMAGE = 1
-    UNENCODED_PREVIEW_IMAGE = 2
-
-async def send_socket_catch_exception(function, message):
-    try:
-        await function(message)
-    except (aiohttp.ClientError, aiohttp.ClientPayloadError, ConnectionResetError) as err:
-        print("send error:", err)
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
