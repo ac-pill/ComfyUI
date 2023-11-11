@@ -131,21 +131,21 @@ class NodeProgressTracker:
         procinfo = {}
         current = last_node_id
         if current is None:
-            # Get a status completed after processed but uploading
-            procinfo['status'] = 'uploading'
-            procinfo['prompt_id'] = prompt_id
-            procinfo['current_node'] = None
-            procinfo['percentage'] = 100
-            procinfo['total'] = self.get_total()
-            procinfo['cached'] = self.unprocessed_nodes()
-        elif current is None and complete:
-            # Get a status completed after files sent
+            # Get a status completed after processed and sent
             procinfo['status'] = 'complete'
             procinfo['prompt_id'] = prompt_id
             procinfo['current_node'] = None
             procinfo['percentage'] = 100
             procinfo['total'] = self.get_total()
             procinfo['cached'] = self.unprocessed_nodes()
+        # elif current is None and complete:
+        #     # Get a status completed after files sent
+        #     procinfo['status'] = 'complete'
+        #     procinfo['prompt_id'] = prompt_id
+        #     procinfo['current_node'] = None
+        #     procinfo['percentage'] = 100
+        #     procinfo['total'] = self.get_total()
+        #     procinfo['cached'] = self.unprocessed_nodes()
         else:
             procinfo['status'] = 'running'
             procinfo['prompt_id'] = prompt_id
