@@ -108,7 +108,7 @@ class NodeProgressTracker:
 
     def mark_as_executed(self, node_id):
         """Mark a node as executed."""
-        if node_id not in self.executed_nodes:
+        if node_id not in self.executed_nodes and node_id is not None:
             self.executed_nodes.append(node_id)
 
     def get_progress_percentage(self):
@@ -127,17 +127,28 @@ class NodeProgressTracker:
         return [node for node in self.nodes if node not in self.executed_nodes]
 
     # Send Status
-    def get_proc_info(self, last_node_id):
+    def get_proc_info(self, last_node_id, prompt_id, complete):
         procinfo = {}
         current = last_node_id
         if current is None:
-            procinfo['status'] = 'idle'
+            # Get a status completed after processed but uploading
+            procinfo['status'] = 'uploading'
+            procinfo['prompt_id'] = prompt_id
+            procinfo['current_node'] = None
+            procinfo['percentage'] = 100
+            procinfo['total'] = self.get_total()
+            procinfo['cached'] = self.unprocessed_nodes()
+        elif current is None and complete:
+            # Get a status completed after files sent
+            procinfo['status'] = 'complete'
+            procinfo['prompt_id'] = prompt_id
             procinfo['current_node'] = None
             procinfo['percentage'] = 100
             procinfo['total'] = self.get_total()
             procinfo['cached'] = self.unprocessed_nodes()
         else:
             procinfo['status'] = 'running'
+            procinfo['prompt_id'] = prompt_id
             procinfo['current_node'] = current
             procinfo['percentage'] = self.get_progress_percentage()
             procinfo['total'] = self.get_total()
@@ -145,22 +156,23 @@ class NodeProgressTracker:
         return procinfo
     
     # Post Status
-    def procstat_post(self, last_node_id):
-        # asyncio.run_coroutine_threadsafe(self.a_procstat_post(last_node_id), self.loop)
+    def procstat_post(self, last_node_id, prompt_id, complete):
         print('Start ProcStat')
         if last_node_id not in self.executed_nodes:
             print(f'PROCSTAT TRIGGERED: {last_node_id}')
             self.queue.put_nowait(last_node_id)
-            asyncio.run_coroutine_threadsafe(self.handle_queue(), self.loop)
+            asyncio.run_coroutine_threadsafe(self.handle_queue(prompt_id, complete), self.loop)
+        elif last_node_id is None:
+            pass
 
-    async def handle_queue(self):
+    async def handle_queue(self, prompt_id):
         while not self.queue.empty():
             last_node_id = await self.queue.get()
-            await self.a_procstat_post(last_node_id)
+            await self.a_procstat_post(last_node_id, prompt_id)
             self.queue.task_done()
 
-    async def a_procstat_post(self, last_node_id):
-            procinfo = self.get_proc_info(last_node_id)
+    async def a_procstat_post(self, last_node_id, prompt_id, complete):
+            procinfo = self.get_proc_info(last_node_id, prompt_id, complete)
             server_id = self.server_id
             port = self.port
             print(f'POSTING Progress: {server_id}{port}/status')
@@ -974,19 +986,20 @@ class PromptServer():
 
     def send_sync(self, event, data, sid=None):
         ## Edit on original send_sync
-        ## Error not all events are tracked
+        # Get the prompt_id
+        prompt_id = self.prompt_id
+        # Output events and nodes
         print(f'EVENT: {event}')
         print(f'DATA: {data}')
         print(f'LAST NODE: {self.last_node_id}')
         # Get last node and add to executed
         if self.last_node_id is not None:
-            self.tracker.procstat_post(self.last_node_id)
+            self.tracker.procstat_post(self.last_node_id, prompt_id, False)
             self.tracker.mark_as_executed(self.last_node_id)
             print(f"Progress: {self.tracker.get_progress_percentage()}%")
         # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
-        # Get the prompt_id
-        prompt_id = self.prompt_id
-        # Check if the event is 'executed' (i.e., a node has been executed)
+        
+        # Check if the event is 'executed'
         if event == 'executed':
             # Extract the filenames from the data
             filenames = []
@@ -996,8 +1009,8 @@ class PromptServer():
                         filenames.append(image['filename'])
                 # Include the filenames in the data
                 data['filenames'] = filenames
-                print(f'filenames: {data["filenames"]}')
-                print(f'prompt_id: {self.prompt_id}')
+                # print(f'filenames: {data["filenames"]}')
+                # print(f'prompt_id: {self.prompt_id}')
                 # Send message to bot
                 bot_message = {
                     "prompt_id": data['prompt_id'],
@@ -1013,6 +1026,8 @@ class PromptServer():
                 self.send_message_to_bot(bot_message)
         elif event == 'executing':
             if data['node'] is None and data['prompt_id'] == prompt_id:
+                # Send Status as complete for JOB ID
+                self.tracker.procstat_post(self.last_node_id, prompt_id, True)
                 print(f'!!!!SHUTDOWN With Data info!!!!')
                 self.shutdown()
         ## Edit on Original send_sync
