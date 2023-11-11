@@ -33,6 +33,68 @@ import comfy.model_management
 ## Start Block Change Using Requests for Now, replace later with aiohttp
 import requests
 import time
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
+
+# Class Upload Image
+
+class AsyncImageSender:
+    def __init__(self, loop, server_url):
+        self.server_url = server_url
+        self.session = aiohttp.ClientSession()
+        self.loop = loop
+
+    async def upload_file(self, filepath):
+        # Open the image, convert to RGB if necessary
+        with Image.open(filepath) as img:
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            with BytesIO() as buf:
+                img.save(buf, format='JPEG')
+                data = buf.getvalue()
+
+        # Send the image to the server
+        async with self.session.post(self.server_url, data=data) as response:
+            if response.status == 200:
+                print("File uploaded successfully.")
+                # Handle response content if needed here
+
+                # Additional logic to handle bot's execution
+                await self.notify_receiver_done()
+            else:
+                print(f'Unexpected response status: {response.status}')
+                # Handle error response here
+            return response.status
+
+    async def notify_receiver(self, message):
+        async with self.session.post(self.url, data=message) as response:
+            if response.status == 200:
+                print('Server notified successfully.')
+            else:
+                print('Server notification failed.')
+            return response.status
+
+    async def delete_images(self, filepath):
+        # Delete local image file after upload
+        try:
+            os.remove(filepath)
+            print(f"Deleted image {filepath}")
+        except Exception as e:
+            print(f"Error deleting image {filepath}: {e}")
+
+    async def close(self):
+        await self.session.close()
+
+    async def send_images(self, filepaths):
+        for filepath in filepaths:
+            upload_status = await self.upload_file(filepath)
+            if upload_status == 200:
+                await self.notify_receiver(f'Image {filepath} has been processed.')
+                await self.delete_images(filepath)
+            else:
+                print(f'Error uploading file: {filepath}')
+                # Retry?
+        await self.session.close()
 
 # Class Status Tracker
 class NodeProgressTracker:
@@ -631,7 +693,6 @@ class PromptServer():
                         "message": message
                     }
                     print(f'BOT MESSAGE: {bot_message}')
-                    #self.send_message_to_bot(bot_message)
                     self.shutdown()
                     ## End Edit Block
                     return web.json_response({"error": valid[1], "node_errors": valid[3]}, status=400)
@@ -723,10 +784,8 @@ class PromptServer():
             result = self.upload_file(server_id, port, message)
             if result:
                 print("Completed Task successfully with Bot Server")
-                # self.delete_images(message['filenames'])
             else:
                 print("Error completing Task with Bot Server")
-                # self.delete_images(message['filenames'])
 
     ## Delete Images from Server
     def delete_images(self, filenames):
@@ -765,39 +824,53 @@ class PromptServer():
         count = 1
         for filename in filenames:
             filepath = os.path.join(output, filename) 
-            print(f'FILE NAME: {filepath}')
+            print(f'Uploading file: {filepath}')
             print(f'Count {count}')
-            # Load image
-            img = Image.open(filepath)
 
-            print(f'IMAGE OPENED: {img}')
+            # Prepare the multipart/form-data payload
+            multipart_data = MultipartEncoder(
+                fields={
+                    # This is the text part of the message
+                    'message': json.dumps(message),  # Convert the message dict to a JSON string
+                    # This is the file part of the message
+                    'file': (filename, open(filepath, 'rb'), 'image/png')
+                }
+            )
 
-            print(f'IMAGE MODE: {img.mode}')
+            # # Load image
+            # img = Image.open(filepath)
 
-            if img.mode == 'RGB':
-                if img.mode == "RGBA":
-                    r, g, b, a = img.split()
-                    new_img = Image.merge('RGB', (r, g, b))
-                else:
-                    new_img = img.convert("RGB")
-                print(new_img)
-                buffer = BytesIO()
-                new_img.save(buffer, format='PNG')
-                buffer.seek(0)
-                data = buffer.read()
-            elif img.mode == 'RGBA':
-                new_img = img.convert("RGBA")
-                img_buffer = BytesIO()
-                new_img.save(img_buffer, format='PNG')
-                img_buffer.seek(0)
-                data = img_buffer.read()
-            else:
-                print(f"Unknown image mode for {filename}: {img.mode}")
-                continue 
+            # print(f'IMAGE OPENED: {img}')
 
-            url = f'{server_id}{port}/upload?filename={filename}' 
-            headers = {'Content-Type': 'image/png', "Content-Disposition": f'attachment;filename={filename}'}
-            response = requests.post(url, headers=headers, data=data)
+            # print(f'IMAGE MODE: {img.mode}')
+
+            # if img.mode == 'RGB':
+            #     if img.mode == "RGBA":
+            #         r, g, b, a = img.split()
+            #         new_img = Image.merge('RGB', (r, g, b))
+            #     else:
+            #         new_img = img.convert("RGB")
+            #     print(new_img)
+            #     buffer = BytesIO()
+            #     new_img.save(buffer, format='PNG')
+            #     buffer.seek(0)
+            #     data = buffer.read()
+            # elif img.mode == 'RGBA':
+            #     new_img = img.convert("RGBA")
+            #     img_buffer = BytesIO()
+            #     new_img.save(img_buffer, format='PNG')
+            #     img_buffer.seek(0)
+            #     data = img_buffer.read()
+            # else:
+            #     print(f"Unknown image mode for {filename}: {img.mode}")
+            #     continue 
+
+            url = f'{server_id}:{port}/upload'
+            # The custom headers must include the boundary string
+            headers = {
+                'Content-Type': multipart_data.content_type,
+            }
+            response = requests.post(url, headers=headers, data=multipart_data)
             if response.status_code != 200:
                 print(f'Failed to upload file {filename}: {response.content}')
                 self.delete_images(filename)
@@ -806,17 +879,17 @@ class PromptServer():
                 self.delete_images(filename)
             
             # Update Message with current filename
-            message['filenames'] = filename
-            response = requests.post(f'{server_id}{port}/executed', json=message)
-            if response.status_code != 200:
-                print(f'Failed to send message to bot: {response.content}')
-                # Add log
-            else:
+            # message['filenames'] = filename
+            # response = requests.post(f'{server_id}{port}/executed', json=message)
+            # if response.status_code != 200:
+            #     print(f'Failed to send message to bot: {response.content}')
+            #     # Add log
+            # else:
                 
-                if response.text == "Bot Done":
-                    print(response.text)
-                else:
-                    print(f'Unexpected response from bot: {response.text}')
+            #     if response.text == "Bot Done":
+            #         print(response.text)
+            #     else:
+            #         print(f'Unexpected response from bot: {response.text}')
             count += 1
         return True
 
