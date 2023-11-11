@@ -165,10 +165,10 @@ class NodeProgressTracker:
         elif last_node_id is None:
             pass
 
-    async def handle_queue(self, prompt_id):
+    async def handle_queue(self, prompt_id, complete):
         while not self.queue.empty():
             last_node_id = await self.queue.get()
-            await self.a_procstat_post(last_node_id, prompt_id)
+            await self.a_procstat_post(last_node_id, prompt_id, complete)
             self.queue.task_done()
 
     async def a_procstat_post(self, last_node_id, prompt_id, complete):
