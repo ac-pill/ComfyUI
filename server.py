@@ -261,6 +261,7 @@ class PromptServer():
         self.msg_seed = None ## Hold the seed stated by user
         self.node_list = [] ## Hold the total node count
         self.tracker = None ## Hold the tracker class
+        self.job_id = None ## Hold the job id
 
         self.on_prompt_handlers = []
 
@@ -665,6 +666,8 @@ class PromptServer():
                     self.msg_neg_prompt = extra_data["neg_prompt"]
                 if "seed" in extra_data:
                     self.msg_seed = extra_data["seed"]
+                if "job_id" in extra_data:
+                    self.job_id = extra_data["job_id"]
 
                 if "client_id" in json_data:
                     extra_data["client_id"] = json_data["client_id"]
@@ -994,7 +997,7 @@ class PromptServer():
         print(f'LAST NODE: {self.last_node_id}')
         # Get last node and add to executed
         if self.last_node_id is not None:
-            self.tracker.procstat_post(self.last_node_id, prompt_id, False)
+            self.tracker.procstat_post(self.last_node_id, self.job_id, False)
             self.tracker.mark_as_executed(self.last_node_id)
             print(f"Progress: {self.tracker.get_progress_percentage()}%")
         # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
@@ -1014,6 +1017,7 @@ class PromptServer():
                 # Send message to bot
                 bot_message = {
                     "prompt_id": data['prompt_id'],
+                    "job_id": self.job_id,
                     "user_id": self.user_prompt_map[prompt_id]["user_id"],
                     "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
                     "filenames": data['filenames'],
@@ -1027,7 +1031,8 @@ class PromptServer():
         elif event == 'executing':
             if data['node'] is None and data['prompt_id'] == prompt_id:
                 # Send Status as complete for JOB ID
-                self.tracker.procstat_post(self.last_node_id, self.get_queue_info(), True)
+                if self.job_id is not None:
+                    self.tracker.procstat_post(self.last_node_id, self.job_id, True)
                 print(f'!!!!SHUTDOWN With Data info!!!!')
                 self.shutdown()
         ## Edit on Original send_sync
