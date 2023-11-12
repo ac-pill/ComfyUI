@@ -127,28 +127,20 @@ class NodeProgressTracker:
         return [node for node in self.nodes if node not in self.executed_nodes]
 
     # Send Status
-    def get_proc_info(self, last_node_id, prompt_id, complete):
+    def get_proc_info(self, last_node_id, job_id, complete):
         procinfo = {}
         current = last_node_id
         if current is None:
             # Get a status completed after processed and sent
             procinfo['status'] = 'complete'
-            procinfo['prompt_id'] = prompt_id
+            procinfo['job_id'] = job_id
             procinfo['current_node'] = None
             procinfo['percentage'] = 100
             procinfo['total'] = self.get_total()
             procinfo['cached'] = self.unprocessed_nodes()
-        # elif current is None and complete:
-        #     # Get a status completed after files sent
-        #     procinfo['status'] = 'complete'
-        #     procinfo['prompt_id'] = prompt_id
-        #     procinfo['current_node'] = None
-        #     procinfo['percentage'] = 100
-        #     procinfo['total'] = self.get_total()
-        #     procinfo['cached'] = self.unprocessed_nodes()
         else:
             procinfo['status'] = 'running'
-            procinfo['prompt_id'] = prompt_id
+            procinfo['job_id'] = job_id
             procinfo['current_node'] = current
             procinfo['percentage'] = self.get_progress_percentage()
             procinfo['total'] = self.get_total()
@@ -156,23 +148,23 @@ class NodeProgressTracker:
         return procinfo
     
     # Post Status
-    def procstat_post(self, last_node_id, prompt_id, complete):
+    def procstat_post(self, last_node_id, job_id, complete):
         print('Start ProcStat')
         if last_node_id not in self.executed_nodes:
             print(f'PROCSTAT TRIGGERED: {last_node_id}')
             self.queue.put_nowait(last_node_id)
-            asyncio.run_coroutine_threadsafe(self.handle_queue(prompt_id, complete), self.loop)
+            asyncio.run_coroutine_threadsafe(self.handle_queue(job_id, complete), self.loop)
         elif last_node_id is None:
             pass
 
-    async def handle_queue(self, prompt_id, complete):
+    async def handle_queue(self, job_id, complete):
         while not self.queue.empty():
             last_node_id = await self.queue.get()
-            await self.a_procstat_post(last_node_id, prompt_id, complete)
+            await self.a_procstat_post(last_node_id, job_id, complete)
             self.queue.task_done()
 
-    async def a_procstat_post(self, last_node_id, prompt_id, complete):
-            procinfo = self.get_proc_info(last_node_id, prompt_id, complete)
+    async def a_procstat_post(self, last_node_id, job_id, complete):
+            procinfo = self.get_proc_info(last_node_id, job_id, complete)
             server_id = self.server_id
             port = self.port
             print(f'POSTING Progress: {server_id}{port}/status')
