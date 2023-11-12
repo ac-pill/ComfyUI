@@ -1027,7 +1027,7 @@ class PromptServer():
         elif event == 'executing':
             if data['node'] is None and data['prompt_id'] == prompt_id:
                 # Send Status as complete for JOB ID
-                self.tracker.procstat_post(self.last_node_id, prompt_id, True)
+                self.tracker.procstat_post(self.last_node_id, self.get_queue_info(), True)
                 print(f'!!!!SHUTDOWN With Data info!!!!')
                 self.shutdown()
         ## Edit on Original send_sync
