@@ -822,7 +822,7 @@ class PromptServer():
             except Exception as e:
                 print(f"Could not delete file {file_path}. Reason: {e}")
 
-    ## Upload files to Bot Server / Task Server - To be converted to a webhook
+    ## Upload files to Task Server / Task Server - To be converted to a webhook
     def upload_file(self, server_id, port, message):
         filenames = message['filenames']
         # Loop over all filenames and upload each file
@@ -844,34 +844,6 @@ class PromptServer():
                 }
             )
 
-            # # Load image
-            # img = Image.open(filepath)
-
-            # print(f'IMAGE OPENED: {img}')
-
-            # print(f'IMAGE MODE: {img.mode}')
-
-            # if img.mode == 'RGB':
-            #     if img.mode == "RGBA":
-            #         r, g, b, a = img.split()
-            #         new_img = Image.merge('RGB', (r, g, b))
-            #     else:
-            #         new_img = img.convert("RGB")
-            #     print(new_img)
-            #     buffer = BytesIO()
-            #     new_img.save(buffer, format='PNG')
-            #     buffer.seek(0)
-            #     data = buffer.read()
-            # elif img.mode == 'RGBA':
-            #     new_img = img.convert("RGBA")
-            #     img_buffer = BytesIO()
-            #     new_img.save(img_buffer, format='PNG')
-            #     img_buffer.seek(0)
-            #     data = img_buffer.read()
-            # else:
-            #     print(f"Unknown image mode for {filename}: {img.mode}")
-            #     continue 
-
             url = f'{server_id}:{port}/upload'
             # The custom headers must include the boundary string
             headers = {
@@ -884,19 +856,7 @@ class PromptServer():
             else:
                 print(f'Uploaded file {filename}: {response.content}')
                 self.delete_images(filename)
-            
-            # Update Message with current filename
-            # message['filenames'] = filename
-            # response = requests.post(f'{server_id}{port}/executed', json=message)
-            # if response.status_code != 200:
-            #     print(f'Failed to send message to bot: {response.content}')
-            #     # Add log
-            # else:
-                
-            #     if response.text == "Bot Done":
-            #         print(response.text)
-            #     else:
-            #         print(f'Unexpected response from bot: {response.text}')
+
             count += 1
         return True
 
