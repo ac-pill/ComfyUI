@@ -98,12 +98,11 @@ class AsyncImageSender:
 
 # Class Status Tracker
 class NodeProgressTracker:
-    def __init__(self, loop, nodes, server_id, port):
+    def __init__(self, loop, nodes, endpoint_url):
         self.loop = loop
         self.nodes = nodes # All nodes list
         self.executed_nodes = []
-        self.server_id = server_id
-        self.port = port
+        self.endpoint_url = endpoint_url
         self.queue = asyncio.Queue()
 
     def mark_as_executed(self, node_id):
@@ -165,13 +164,12 @@ class NodeProgressTracker:
 
     async def a_procstat_post(self, last_node_id, job_id, complete):
             procinfo = self.get_proc_info(last_node_id, job_id, complete)
-            server_id = self.server_id
-            port = self.port
-            print(f'POSTING Progress: {server_id}{port}/status')
+            endpoint_url = self.endpoint_url
+            print(f'POSTING Progress: {endpoint_url}')
             try:
                 # Using the aiohttp ClientSession from your existing imports
                 async with aiohttp.ClientSession() as session:
-                    response = await session.post(f'{server_id}{port}/status', json=procinfo)
+                    response = await session.post(f'{endpoint_url}', json=procinfo)
                     if response.status == 200:
                         response_text = await response.text()
                         print(response_text)
@@ -640,33 +638,51 @@ class PromptServer():
                 ## Adding default vars
                 user_id = None  
                 channel_id = None
-                server_id = None
-                port = None
+                endpoint_image = None
+                endpoint_status = None
                 ### User ID added on client side if using API ###
                 print(f'EXTRA DATA: {extra_data}')
-                if "user_id" in extra_data:
-                    user_id = extra_data["user_id"]
-                if "channel_id" in extra_data:
-                    channel_id = extra_data["channel_id"]
-                if "server_id" in extra_data:
-                    server_id = extra_data["server_id"]
-                if "port" in extra_data:
-                    port = extra_data["port"]
-                if "prompt" in extra_data:
-                    self.msg_prompt = extra_data["prompt"]
-                if "neg_prompt" in extra_data:
-                    self.msg_neg_prompt = extra_data["neg_prompt"]
-                if "seed" in extra_data:
-                    self.msg_seed = extra_data["seed"]
-                if "job_id" in extra_data:
-                    self.job_id = extra_data["job_id"]
 
-                if "client_id" in json_data:
-                    extra_data["client_id"] = json_data["client_id"]
-                    print(f'Client ID: {extra_data["client_id"]}')
-                else:
-                    extra_data["client_id"] = str(uuid.uuid4().hex)
-                    print(f'Client ID: {extra_data["client_id"]}')
+                # Extracting values with default to None if key is not present
+                user_id = extra_data.get("user_id")
+                channel_id = extra_data.get("channel_id")
+                endpoint_image = extra_data.get("endpoint_image")
+                endpoint_status = extra_data.get("endpoint_status")
+
+                # Setting instance variables directly
+                self.msg_prompt = extra_data.get("prompt")
+                self.msg_neg_prompt = extra_data.get("neg_prompt")
+                self.msg_seed = extra_data.get("seed")
+                self.job_id = extra_data.get("job_id")
+
+                # Handling client_id
+                extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
+                print(f'Client ID: {extra_data["client_id"]}')
+
+                # if "user_id" in extra_data:
+                #     user_id = extra_data["user_id"]
+                # if "channel_id" in extra_data:
+                #     channel_id = extra_data["channel_id"]
+                # if "endpoint" in extra_data:
+                #     endpoint = extra_data["endpoint"]
+                # if "port" in extra_data:
+                #     port = extra_data["port"]
+                # if "route" in extra_data:
+                #     route = extra_data["route"]
+                # if "prompt" in extra_data:
+                #     self.msg_prompt = extra_data["prompt"]
+                # if "neg_prompt" in extra_data:
+                #     self.msg_neg_prompt = extra_data["neg_prompt"]
+                # if "seed" in extra_data:
+                #     self.msg_seed = extra_data["seed"]
+                # if "job_id" in extra_data:
+                #     self.job_id = extra_data["job_id"]
+                # if "client_id" in json_data:
+                #     extra_data["client_id"] = json_data["client_id"]
+                #     print(f'Client ID: {extra_data["client_id"]}')
+                # else:
+                #     extra_data["client_id"] = str(uuid.uuid4().hex)
+                #     print(f'Client ID: {extra_data["client_id"]}')
                 ### User ID added on client side if using API ###
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
@@ -675,17 +691,15 @@ class PromptServer():
                     ## instantiate tracker
                     self.node_list = list(prompt.keys())
                     print(f'NODE LIST: {self.node_list}')
-                    self.tracker = NodeProgressTracker(loop, self.node_list, server_id, port)
+                    self.tracker = NodeProgressTracker(loop, self.node_list, endpoint_status)
                     ## Continue with message assembling
                     self.user_prompt_map[prompt_id] = {
                         "user_id": user_id,
                         "channel_id": channel_id,
-                        "server_id": server_id,
-                        "port": port
+                        "endpoint_image": endpoint_image,
                     }
                     print(f'VALID: {valid}')
                     print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
-                    # print(f"Added to queue: {number, prompt_id, prompt, extra_data, outputs_to_execute}")
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
                     response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
                     return web.json_response(response)
@@ -784,11 +798,10 @@ class PromptServer():
         print(f"Function send message to BOT")
         print(f"BOT MESSAGE: {message}")
         # The address of bot's server
-        if (self.user_prompt_map[self.prompt_id]["server_id"] is not None):
-            server_id = self.user_prompt_map[self.prompt_id]["server_id"]
-            port = self.user_prompt_map[self.prompt_id]["port"]
+        if (self.user_prompt_map[self.prompt_id]["endpoint_image"] is not None):
+            endpoint_image = self.user_prompt_map[self.prompt_id]["endpoint_image"]
             # Upload Files
-            result = self.upload_file(server_id, port, message)
+            result = self.upload_file(endpoint_image, message)
             if result:
                 print("Completed Task successfully with Bot Server")
             else:
@@ -823,7 +836,7 @@ class PromptServer():
                 print(f"Could not delete file {file_path}. Reason: {e}")
 
     ## Upload files to Task Server / Task Server - To be converted to a webhook
-    def upload_file(self, server_id, port, message):
+    def upload_file(self, endpoint_url, message):
         filenames = message['filenames']
         # Loop over all filenames and upload each file
         print(f'Filenames on UPLOAD: {filenames}')
@@ -844,7 +857,7 @@ class PromptServer():
                 }
             )
 
-            url = f'{server_id}:{port}/upload'
+            url = f'{endpoint_url}'
             # The custom headers must include the boundary string
             headers = {
                 'Content-Type': multipart_data.content_type,
