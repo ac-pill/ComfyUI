@@ -259,8 +259,8 @@ def upload_file(endpoint_url, message):
         print(f'Uploading file: {filepath}')
         print(f'Count {count}')
 
-        aws_access_key_id = os.getenv('')
-        aws_secret_access_key = os.getenv('')
+        aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+        aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 
         # Upload to AWS S3
         bucket_name = 'gemz-bucket'  # Retrieve this from environment variables if needed
