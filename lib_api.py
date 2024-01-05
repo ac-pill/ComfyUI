@@ -250,6 +250,11 @@ def upload_file(endpoint_url, message):
     print(f'Filenames on UPLOAD: {filenames}')
     output = folder_paths.get_output_directory()
 
+    aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+    aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+
+    bucket_name = 'gemz-bucket'  # Retrieve this from payload if needed
+
     # Create an S3 client
     s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 
@@ -259,12 +264,7 @@ def upload_file(endpoint_url, message):
         print(f'Uploading file: {filepath}')
         print(f'Count {count}')
 
-        aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-        aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-
         # Upload to AWS S3
-        bucket_name = 'gemz-bucket'  # Retrieve this from environment variables if needed
-
         job_id = message['job_id']
         folder = message['folder']
         s3_object_key = f"{folder}/{job_id}-{filename}"
