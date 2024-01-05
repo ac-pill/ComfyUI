@@ -5,6 +5,7 @@ import traceback
 import json
 from dotenv import load_dotenv
 import boto3
+from botocore.exceptions import ClientError
 
 from io import BytesIO
 from PIL import Image, ImageOps
@@ -253,10 +254,13 @@ def upload_file(endpoint_url, message):
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 
-    bucket_name = 'gemz-bucket'  # Retrieve this from payload if needed
-
     # Create an S3 client
     s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+
+    bucket_name = 'gemz-bucket'  # Retrieve this from payload if needed
+
+    if not bucket_exists(s3, bucket_name):
+        create_bucket(s3, bucket_name)
 
     count = 1
     for filename in filenames:
@@ -301,3 +305,29 @@ def upload_file(endpoint_url, message):
 
         count += 1
     return True
+
+def create_bucket(s3_client, name, region=None):
+    try:
+        if region is None:
+            s3_client.create_bucket(Bucket=name)
+        else:
+            location = {'LocationConstraint': region}
+            s3_client.create_bucket(Bucket=name, CreateBucketConfiguration=location)
+        print(f"Bucket {name} created.")
+    except ClientError as e:
+        print(f"Error: {e}")
+        return False
+    return True
+
+def bucket_exists(s3_client, name):
+    try:
+        s3_client.head_bucket(Bucket=name)
+        return True
+    except ClientError as e:
+        # If a client error is thrown, then check if it was a 404 error.
+        # If it was a 404 error, then the bucket does not exist.
+        error_code = int(e.response['Error']['Code'])
+        if error_code == 404:
+            return False
+        else:
+            raise e
