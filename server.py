@@ -109,6 +109,7 @@ class PromptServer():
         self.tracker = None ## Hold the tracker class
         self.async_upload = None ## Hold the uploader class
         self.job_id = None ## Hold the job id
+        self.aws_bucket = None ## Hold the aws bucket
         self.folder = None ## Hold the folder to upload files
 
         self.on_prompt_handlers = []
@@ -512,7 +513,8 @@ class PromptServer():
                 self.msg_neg_prompt = extra_data.get("neg_prompt")
                 self.msg_seed = extra_data.get("seed")
                 self.job_id = extra_data.get("job_id")
-                self.folder = extra_data.get("folder", "gemz")
+                self.aws_bucket = extra_data.get("aws_bucket", "gemz-bucket")
+                self.folder = extra_data.get("image_folder", "gemz")
 
                 # Handling client_id
                 extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
@@ -725,7 +727,8 @@ class PromptServer():
                 bot_message = {
                     "prompt_id": data['prompt_id'],
                     "job_id": self.job_id,
-                    "folder": self.folder,
+                    "aws_bucket": self.aws_bucket,
+                    "image_folder": self.folder,
                     "user_id": self.user_prompt_map[prompt_id]["user_id"],
                     "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
                     "filenames": data['filenames'],

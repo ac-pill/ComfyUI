@@ -257,7 +257,7 @@ def upload_file(endpoint_url, message):
     # Create an S3 client
     s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 
-    bucket_name = 'gemz-bucket'  # Retrieve this from payload if needed
+    bucket_name = message['aws_bucket']  # Retrieve this from payload if needed
 
     if not bucket_exists(s3, bucket_name):
         create_bucket(s3, bucket_name)
@@ -270,7 +270,7 @@ def upload_file(endpoint_url, message):
 
         # Upload to AWS S3
         job_id = message['job_id']
-        folder = message['folder']
+        folder = message['image_folder']
         s3_object_key = f"{folder}/{job_id}-{filename}"
 
         # Upload the file to the S3 bucket
