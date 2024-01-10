@@ -274,72 +274,13 @@ def upload_file(message):
             except Exception as e:
                 print(f"Error uploading file to S3: {str(e)}")
 
-    # if (message["aws_bucket"] is not None):
-    #     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-    #     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-
-    #     # Create an S3 client
-    #     s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-
-    #     bucket_name = message['aws_bucket']  # Retrieve this from payload if needed
-
-    #     if not bucket_exists(s3, bucket_name):
-    #         create_bucket(s3, bucket_name)
-
-    #     count = 1
-    #     for filename in filenames:
-    #         filepath = os.path.join(output, filename) 
-    #         print(f'Uploading file: {filepath}')
-    #         print(f'Count {count}')
-
-    #         # Upload to AWS S3
-    #         job_id = message['job_id']
-    #         folder = message['image_folder']
-    #         s3_object_key = f"{folder}/{job_id}-{filename}"
-
-    #         # Upload the file to the S3 bucket
-    #         try:
-    #             s3.upload_file(filepath, bucket_name, s3_object_key)
-    #             print(f"File '{filepath}' uploaded to '{bucket_name}' as '{s3_object_key}' successfully.")
-    #         except Exception as e:
-    #             print(f"Error uploading file: {str(e)}")
-
      # Endpoint Upload
-    if message.get("endpoint_image"):
+    elif message.get("endpoint_image"):
+        print("Using image endpoint")
         for filename in filenames:
             filepath = os.path.join(output, filename)
             upload_file_to_endpoint(message["endpoint_image"], filepath, filename, message)
 
-    # if (message["endpoint_image"] is not None):
-    #     count = 1
-    #     for filename in filenames:
-    #         filepath = os.path.join(output, filename) 
-    #         print(f'Uploading file: {filepath}')
-    #         print(f'Count {count}')
-    #         # Prepare the multipart/form-data payload
-    #         multipart_data = MultipartEncoder(
-    #             fields={
-    #                 # This is the text part of the message
-    #                 'message': json.dumps(message),  # Convert the message dict to a JSON string < Is it right? should it be filename?
-    #                 # This is the file part of the message
-    #                 'file': (filename, open(filepath, 'rb'), 'image/png')
-    #             }
-    #         )
-
-    #         url = f'{message["endpoint_image"]}'
-    #         # The custom headers must include the boundary string
-    #         headers = {
-    #             'Content-Type': multipart_data.content_type,
-    #         }
-    #         response = requests.post(url, headers=headers, data=multipart_data)
-    #         if response.status_code != 200:
-    #             print(f'Failed to upload file {filename}: {response.content}')
-    #             delete_images(filename)
-    #         else:
-    #             print(f'Uploaded file {filename}: {response.content}')
-    #             delete_images(filename)
-
-    #         count += 1
     return final_filenames
 
 def create_bucket(s3_client, name, region=None):
