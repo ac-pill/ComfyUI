@@ -21,21 +21,29 @@ import folder_paths
 
 load_dotenv()
 
+# Load environment variables
+# Ensure that the actual names of the environment variables are specified
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+
 # Class Upload Image
 class AsyncImageSender:
     def __init__(self, loop, server_url):
         self.server_url = server_url
         self.session = aiohttp.ClientSession()
-        self.aws_access_key_id = os.getenv('')
-        self.aws_secret_access_key = os.getenv('')
         self.loop = loop
-        self.s3 = boto3.client('s3', aws_access_key_id=self.aws_access_key_id, 
-                          aws_secret_access_key=self.aws_secret_access_key)
+        self.s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, 
+                               aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         
-    def upload_to_s3(self, file_bytes, bucket_name, s3_object_key):
-        
+    async def upload_to_s3(self, file_bytes, bucket_name, s3_object_key):
         try:
-            self.s3.put_object(Bucket=bucket_name, Key=s3_object_key, Body=file_bytes)
+            await self.loop.run_in_executor(
+                None, 
+                self.s3.put_object, 
+                Bucket=bucket_name, 
+                Key=s3_object_key, 
+                Body=file_bytes
+            )
             print(f"File uploaded to '{bucket_name}' as '{s3_object_key}' successfully.")
         except Exception as e:
             print(f"Error uploading file to S3: {str(e)}")
@@ -46,28 +54,20 @@ class AsyncImageSender:
             if img.mode != 'RGB':
                 img = img.convert('RGB')
             with BytesIO() as buf:
-                img.save(buf, format='JPEG')
+                img.save(buf, format='PNG')
                 data = buf.getvalue()
 
-        # Send the image to the server
-        # Upload to AWS S3
-        bucket_name = 'your_bucket_name'  # Retrieve this from environment variables if needed
-        s3_object_key = 'your_s3_object_key'  # Determine the key as needed
-
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self.upload_to_s3, data, bucket_name, s3_object_key)
-
-        async with self.session.post(self.server_url, data=data) as response:
-            if response.status == 200:
-                print("File uploaded successfully.")
-                # Handle response content if needed here
-
-                # Additional logic to handle bot's execution
-                await self.notify_receiver_done()
-            else:
-                print(f'Unexpected response status: {response.status}')
-                # Handle error response here
-            return response.status
+        # If server URL is provided, upload the image to the server
+        if self.server_url:
+            async with self.session.post(self.server_url, data=data) as response:
+                if response.status == 200:
+                    print("File uploaded successfully.")
+                    # Handle response content if needed here
+                else:
+                    print(f'Unexpected response status: {response.status}')
+                return response.status
+        else:
+            print("No server URL provided.")
 
     async def notify_receiver(self, message):
         async with self.session.post(self.url, data=message) as response:
@@ -129,7 +129,7 @@ class NodeProgressTracker:
         return [node for node in self.nodes if node not in self.executed_nodes]
 
     # Send Status
-    def get_proc_info(self, last_node_id, job_id, complete):
+    def get_proc_info(self, last_node_id, job_id, filenames=None):
         procinfo = {}
         current = last_node_id
         if current is None:
@@ -140,6 +140,7 @@ class NodeProgressTracker:
             procinfo['percentage'] = 100
             procinfo['total'] = self.get_total()
             procinfo['cached'] = self.unprocessed_nodes()
+            procinfo['filenames'] = filenames
         else:
             procinfo['status'] = 'running'
             procinfo['job_id'] = job_id
@@ -150,27 +151,27 @@ class NodeProgressTracker:
         return procinfo
     
     # Post Status
-    def procstat_post(self, last_node_id, job_id, complete):
+    def procstat_post(self, last_node_id, job_id, filenames=None):
         print('Start ProcStat')
         if last_node_id not in self.executed_nodes:
             print(f'PROCSTAT TRIGGERED: {last_node_id}')
             self.queue.put_nowait(last_node_id)
-            asyncio.run_coroutine_threadsafe(self.handle_queue(job_id, complete), self.loop)
+            asyncio.run_coroutine_threadsafe(self.handle_queue(job_id, filenames), self.loop)
         elif last_node_id is None:
             pass
 
-    async def handle_queue(self, job_id, complete):
+    async def handle_queue(self, job_id, filenames):
         while not self.queue.empty():
             last_node_id = await self.queue.get()
-            await self.a_procstat_post(last_node_id, job_id, complete)
+            await self.a_procstat_post(last_node_id, job_id, filenames)
             self.queue.task_done()
 
-    async def a_procstat_post(self, last_node_id, job_id, complete):
-            procinfo = self.get_proc_info(last_node_id, job_id, complete)
+    async def a_procstat_post(self, last_node_id, job_id, filenames):
+            procinfo = self.get_proc_info(last_node_id, job_id, filenames)
             endpoint_url = self.endpoint_url
             print(f'POSTING Progress: {endpoint_url}')
             try:
-                # Using the aiohttp ClientSession from your existing imports
+                # Using the aiohttp ClientSession from existing imports
                 async with aiohttp.ClientSession() as session:
                     response = await session.post(f'{endpoint_url}', json=procinfo)
                     if response.status == 200:
@@ -203,18 +204,19 @@ def shutdown(pipe, message=None):
     return
     
 ## Send Executed Image to API
-def send_message_to_bot(user_prompt_map, prompt_id, message):
+def send_files(message):
     print(f"Function send message to BOT")
     print(f"BOT MESSAGE: {message}")
     # The address of bot's server
-    if (user_prompt_map[prompt_id]["endpoint_image"] is not None):
-        endpoint_image = user_prompt_map[prompt_id]["endpoint_image"]
+    if (message["aws_bucket"] is not None or message["endpoint_image"] is not None):
         # Upload Files
-        result = upload_file(endpoint_image, message)
+        result = upload_file(message)
         if result:
             print("Completed Task successfully with Bot Server")
+            return result
         else:
             print("Error completing Task with Bot Server")
+            return False
 
 ## Delete Images from Server
 def delete_images(filenames):
@@ -245,66 +247,100 @@ def delete_all_input_files():
             print(f"Could not delete file {file_path}. Reason: {e}")
 
 ## Upload files to Task Server / Task Server - Need to serve POST and AWS scenarios
-def upload_file(endpoint_url, message):
+def upload_file(message):
     filenames = message['filenames']
+    final_filenames = []
     # Loop over all filenames and upload each file
     print(f'Filenames on UPLOAD: {filenames}')
     output = folder_paths.get_output_directory()
 
-    aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-    aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    # S3 Upload
+    if message.get("aws_bucket"):
+        s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, 
+                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        bucket_name = message['aws_bucket']
 
-    # Create an S3 client
-    s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+        if not bucket_exists(s3_client, bucket_name):
+            create_bucket(s3_client, bucket_name)
 
-    bucket_name = message['aws_bucket']  # Retrieve this from payload if needed
+        for filename in filenames:
+            filepath = os.path.join(output, filename)
+            final_filename = f"{message['image_folder']}/{message['job_id']}-{filename}"
+            s3_object_key = final_filename
+            try:
+                s3_client.upload_file(filepath, bucket_name, s3_object_key)
+                print(f"File '{filepath}' uploaded to '{bucket_name}' as '{s3_object_key}' successfully.")
+                final_filenames.append(final_filename)
+            except Exception as e:
+                print(f"Error uploading file to S3: {str(e)}")
 
-    if not bucket_exists(s3, bucket_name):
-        create_bucket(s3, bucket_name)
+    # if (message["aws_bucket"] is not None):
+    #     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+    #     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 
-    count = 1
-    for filename in filenames:
-        filepath = os.path.join(output, filename) 
-        print(f'Uploading file: {filepath}')
-        print(f'Count {count}')
+    #     # Create an S3 client
+    #     s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 
-        # Upload to AWS S3
-        job_id = message['job_id']
-        folder = message['image_folder']
-        s3_object_key = f"{folder}/{job_id}-{filename}"
+    #     bucket_name = message['aws_bucket']  # Retrieve this from payload if needed
 
-        # Upload the file to the S3 bucket
-        try:
-            s3.upload_file(filepath, bucket_name, s3_object_key)
-            print(f"File '{filepath}' uploaded to '{bucket_name}' as '{s3_object_key}' successfully.")
-        except Exception as e:
-            print(f"Error uploading file: {str(e)}")
+    #     if not bucket_exists(s3, bucket_name):
+    #         create_bucket(s3, bucket_name)
 
-        # # Prepare the multipart/form-data payload
-        # multipart_data = MultipartEncoder(
-        #     fields={
-        #         # This is the text part of the message
-        #         'message': json.dumps(message),  # Convert the message dict to a JSON string < Is it right? should it be filename?
-        #         # This is the file part of the message
-        #         'file': (filename, open(filepath, 'rb'), 'image/png')
-        #     }
-        # )
+    #     count = 1
+    #     for filename in filenames:
+    #         filepath = os.path.join(output, filename) 
+    #         print(f'Uploading file: {filepath}')
+    #         print(f'Count {count}')
 
-        # url = f'{endpoint_url}'
-        # # The custom headers must include the boundary string
-        # headers = {
-        #     'Content-Type': multipart_data.content_type,
-        # }
-        # response = requests.post(url, headers=headers, data=multipart_data)
-        # if response.status_code != 200:
-        #     print(f'Failed to upload file {filename}: {response.content}')
-        #     delete_images(filename)
-        # else:
-        #     print(f'Uploaded file {filename}: {response.content}')
-        #     delete_images(filename)
+    #         # Upload to AWS S3
+    #         job_id = message['job_id']
+    #         folder = message['image_folder']
+    #         s3_object_key = f"{folder}/{job_id}-{filename}"
 
-        count += 1
-    return True
+    #         # Upload the file to the S3 bucket
+    #         try:
+    #             s3.upload_file(filepath, bucket_name, s3_object_key)
+    #             print(f"File '{filepath}' uploaded to '{bucket_name}' as '{s3_object_key}' successfully.")
+    #         except Exception as e:
+    #             print(f"Error uploading file: {str(e)}")
+
+     # Endpoint Upload
+    if message.get("endpoint_image"):
+        for filename in filenames:
+            filepath = os.path.join(output, filename)
+            upload_file_to_endpoint(message["endpoint_image"], filepath, filename, message)
+
+    # if (message["endpoint_image"] is not None):
+    #     count = 1
+    #     for filename in filenames:
+    #         filepath = os.path.join(output, filename) 
+    #         print(f'Uploading file: {filepath}')
+    #         print(f'Count {count}')
+    #         # Prepare the multipart/form-data payload
+    #         multipart_data = MultipartEncoder(
+    #             fields={
+    #                 # This is the text part of the message
+    #                 'message': json.dumps(message),  # Convert the message dict to a JSON string < Is it right? should it be filename?
+    #                 # This is the file part of the message
+    #                 'file': (filename, open(filepath, 'rb'), 'image/png')
+    #             }
+    #         )
+
+    #         url = f'{message["endpoint_image"]}'
+    #         # The custom headers must include the boundary string
+    #         headers = {
+    #             'Content-Type': multipart_data.content_type,
+    #         }
+    #         response = requests.post(url, headers=headers, data=multipart_data)
+    #         if response.status_code != 200:
+    #             print(f'Failed to upload file {filename}: {response.content}')
+    #             delete_images(filename)
+    #         else:
+    #             print(f'Uploaded file {filename}: {response.content}')
+    #             delete_images(filename)
+
+    #         count += 1
+    return final_filenames
 
 def create_bucket(s3_client, name, region=None):
     try:
@@ -331,3 +367,21 @@ def bucket_exists(s3_client, name):
             return False
         else:
             raise e
+
+## Ensure deletion of files uses 'with' statement for safe file handling
+def upload_file_to_endpoint(endpoint_url, filepath, filename, message):
+    with open(filepath, 'rb') as file:
+        multipart_data = MultipartEncoder(
+            fields={
+                'message': json.dumps(message),
+                'file': (filename, file, 'image/png')
+            }
+        )
+        headers = {'Content-Type': multipart_data.content_type}
+        response = requests.post(endpoint_url, headers=headers, data=multipart_data)
+        if response.status_code != 200:
+            print(f'Failed to upload file {filename}: {response.content}')
+        else:
+            print(f'Uploaded file {filename}: {response.content}')
+
+## Missing status with filenames

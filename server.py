@@ -33,7 +33,7 @@ import comfy.model_management
 ## Start Block Change Using Requests for Now, replace later with aiohttp
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from lib_api import NodeProgressTracker, AsyncImageSender, shutdown, delete_images, send_message_to_bot
+from lib_api import NodeProgressTracker, AsyncImageSender, shutdown, delete_images, send_files
 
 ## End Block Change
 
@@ -111,6 +111,7 @@ class PromptServer():
         self.job_id = None ## Hold the job id
         self.aws_bucket = None ## Hold the aws bucket
         self.folder = None ## Hold the folder to upload files
+        self.uploaded_filenames = []  ## Hold a final list with files uploaded
 
         self.on_prompt_handlers = []
 
@@ -713,7 +714,6 @@ class PromptServer():
         
         # Check if the event is 'executed'
         if event == 'executed':
-            # Extract the filenames from the data
             filenames = []
             if 'output' in data and 'images' in data['output'] and data['output']['images'][0]['type'] == 'output':
                 for image in data['output']['images']:
@@ -721,8 +721,6 @@ class PromptServer():
                         filenames.append(image['filename'])
                 # Include the filenames in the data
                 data['filenames'] = filenames
-                # print(f'filenames: {data["filenames"]}')
-                # print(f'prompt_id: {self.prompt_id}')
                 # Send message to bot
                 bot_message = {
                     "prompt_id": data['prompt_id'],
@@ -737,13 +735,19 @@ class PromptServer():
                     "seed": self.msg_seed
                 }
                 print(f'BOT MESSAGE: {bot_message}')
-                # This could be a POST request or Webhook
-                send_message_to_bot(self.user_prompt_map, self.prompt_id, bot_message)
+                # Send Files
+                result = send_files(message=bot_message)
+                # Check if result is a list before extending
+                if isinstance(result, list):
+                    self.uploaded_filenames.extend(result)
+                else:
+                    print("Error or no files returned from send_files")
+        # Work is done
         elif event == 'executing':
             if data['node'] is None and data['prompt_id'] == prompt_id:
                 # Send Status as complete for JOB ID
                 if self.job_id is not None:
-                    self.tracker.procstat_post(self.last_node_id, self.job_id, True)
+                    self.tracker.procstat_post(self.last_node_id, self.job_id, self.uploaded_filenames)
                 print(f'!!!!SHUTDOWN With Data info!!!!')
                 shutdown(self.pipe)
         ## Edit on Original send_sync
