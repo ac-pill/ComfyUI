@@ -109,6 +109,7 @@ class PromptServer():
         self.tracker = None ## Hold the tracker class
         self.async_upload = None ## Hold the uploader class
         self.job_id = None ## Hold the job id
+        self.payload = None ## Hold identifier ids
         self.aws_bucket = None ## Hold the aws bucket
         self.folder = None ## Hold the folder to upload files
         self.uploaded_filenames = []  ## Hold a final list with files uploaded
@@ -516,6 +517,7 @@ class PromptServer():
                 self.job_id = extra_data.get("job_id")
                 self.aws_bucket = extra_data.get("aws_bucket", "gemz-bucket")
                 self.folder = extra_data.get("image_folder", "gemz")
+                self.payload = extra_data.get("payload")
 
                 # Handling client_id
                 extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
@@ -710,7 +712,6 @@ class PromptServer():
             self.tracker.procstat_post(self.last_node_id, self.job_id, False)
             self.tracker.mark_as_executed(self.last_node_id)
             print(f"Progress: {self.tracker.get_progress_percentage()}%")
-            # print(f'UNPROCESSED NODE: {self.tracker.unprocessed_nodes()}')
         
         # Check if the event is 'executed'
         if event == 'executed':
@@ -727,9 +728,10 @@ class PromptServer():
                     "job_id": self.job_id,
                     "aws_bucket": self.aws_bucket,
                     "image_folder": self.folder,
+                    "filenames": data['filenames'],
+                    "payload": self.payload,
                     "user_id": self.user_prompt_map[prompt_id]["user_id"],
                     "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
-                    "filenames": data['filenames'],
                     "prompt": self.msg_prompt,
                     "neg_prompt": self.msg_neg_prompt,
                     "seed": self.msg_seed
@@ -747,7 +749,7 @@ class PromptServer():
             if data['node'] is None and data['prompt_id'] == prompt_id:
                 # Send Status as complete for JOB ID
                 if self.job_id is not None:
-                    self.tracker.procstat_post(self.last_node_id, self.job_id, self.uploaded_filenames)
+                    self.tracker.procstat_post(self.last_node_id, self.job_id, self.uploaded_filenames, self.payload)
                 print(f'!!!!SHUTDOWN With Data info!!!!')
                 shutdown(self.pipe)
         ## Edit on Original send_sync

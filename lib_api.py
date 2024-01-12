@@ -129,7 +129,7 @@ class NodeProgressTracker:
         return [node for node in self.nodes if node not in self.executed_nodes]
 
     # Send Status
-    def get_proc_info(self, last_node_id, job_id, filenames=None):
+    def get_proc_info(self, last_node_id, job_id, filenames=None, payload=None):
         procinfo = {}
         current = last_node_id
         if current is None:
@@ -141,6 +141,7 @@ class NodeProgressTracker:
             procinfo['total'] = self.get_total()
             procinfo['cached'] = self.unprocessed_nodes()
             procinfo['filenames'] = filenames
+            procinfo['payload'] = payload
         else:
             procinfo['status'] = 'running'
             procinfo['job_id'] = job_id
@@ -151,23 +152,23 @@ class NodeProgressTracker:
         return procinfo
     
     # Post Status
-    def procstat_post(self, last_node_id, job_id, filenames=None):
+    def procstat_post(self, last_node_id, job_id, filenames=None, payload=None):
         print('Start ProcStat')
         if last_node_id not in self.executed_nodes:
             print(f'PROCSTAT TRIGGERED: {last_node_id}')
             self.queue.put_nowait(last_node_id)
-            asyncio.run_coroutine_threadsafe(self.handle_queue(job_id, filenames), self.loop)
+            asyncio.run_coroutine_threadsafe(self.handle_queue(job_id, filenames, payload), self.loop)
         elif last_node_id is None:
             pass
 
-    async def handle_queue(self, job_id, filenames):
+    async def handle_queue(self, job_id, filenames, payload):
         while not self.queue.empty():
             last_node_id = await self.queue.get()
-            await self.a_procstat_post(last_node_id, job_id, filenames)
+            await self.a_procstat_post(last_node_id, job_id, filenames, payload)
             self.queue.task_done()
 
-    async def a_procstat_post(self, last_node_id, job_id, filenames):
-            procinfo = self.get_proc_info(last_node_id, job_id, filenames)
+    async def a_procstat_post(self, last_node_id, job_id, filenames, payload):
+            procinfo = self.get_proc_info(last_node_id, job_id, filenames, payload)
             endpoint_url = self.endpoint_url
             print(f'POSTING Progress: {endpoint_url}')
             try:
@@ -280,6 +281,8 @@ def upload_file(message):
         for filename in filenames:
             filepath = os.path.join(output, filename)
             upload_file_to_endpoint(message["endpoint_image"], filepath, filename, message)
+    
+    delete_images(filenames)
 
     return final_filenames
 
