@@ -257,6 +257,7 @@ def upload_file(message):
 
     # S3 Upload
     if message.get("aws_bucket"):
+        print("Using AWS Server")
         s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, 
                                  aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         bucket_name = message['aws_bucket']
@@ -280,7 +281,9 @@ def upload_file(message):
         print("Using image endpoint")
         for filename in filenames:
             filepath = os.path.join(output, filename)
+            final_filename = filename
             upload_file_to_endpoint(message["endpoint_image"], filepath, filename, message)
+            final_filenames.append(final_filename)
     
     delete_images(filenames)
 
