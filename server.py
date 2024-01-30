@@ -111,7 +111,8 @@ class PromptServer():
         self.job_id = None ## Hold the job id
         self.payload = None ## Hold identifier ids
         self.aws_bucket = None ## Hold the aws bucket
-        self.folder = None ## Hold the folder to upload files
+        self.folder = None ## Hold the folder to input files
+        self.folder_output = None ## Hold the folder to input files
         self.uploaded_filenames = []  ## Hold a final list with files uploaded
 
         self.on_prompt_handlers = []
@@ -517,6 +518,7 @@ class PromptServer():
                 self.job_id = extra_data.get("job_id")
                 self.aws_bucket = extra_data.get("aws_bucket", "gemz-bucket")
                 self.folder = extra_data.get("image_folder", "gemz")
+                self.folder_output = extra_data.get("image_folder_output", "gemz")
                 self.payload = extra_data.get("payload")
 
                 # Handling client_id

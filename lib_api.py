@@ -262,12 +262,18 @@ def upload_file(message):
                                  aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         bucket_name = message['aws_bucket']
 
+        folder = message.get("image_folder_output", message.get("image_folder"))
+
+        if folder is None:
+            print(f'Output Folder is set to None, saving on default Gemz folder')
+            folder = 'gemz'
+
         if not bucket_exists(s3_client, bucket_name):
             create_bucket(s3_client, bucket_name)
 
         for filename in filenames:
             filepath = os.path.join(output, filename)
-            final_filename = f"{message['image_folder']}/{message['job_id']}-{filename}"
+            final_filename = f"{folder}/{message['job_id']}-{filename}"
             s3_object_key = final_filename
             try:
                 s3_client.upload_file(filepath, bucket_name, s3_object_key)
