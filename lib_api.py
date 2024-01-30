@@ -263,6 +263,7 @@ def upload_file(message):
         bucket_name = message['aws_bucket']
 
         folder = message.get("image_folder_output", message.get("image_folder"))
+        
 
         if folder is None:
             print(f'Output Folder is set to None, saving on default Gemz folder')

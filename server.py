@@ -730,6 +730,7 @@ class PromptServer():
                     "job_id": self.job_id,
                     "aws_bucket": self.aws_bucket,
                     "image_folder": self.folder,
+                    "image_folder_output": self.folder_output,
                     "filenames": data['filenames'],
                     "endpoint_image": self.user_prompt_map[prompt_id]["endpoint_image"],
                     "payload": self.payload,
