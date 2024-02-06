@@ -14,6 +14,7 @@ venv/
 /web/extensions/*
 !/web/extensions/logging.js.example
 !/web/extensions/core/
-
+/tests-ui/data/object_info.json
+/user/
 temp_args.json
 handler.py
