@@ -18,3 +18,4 @@ venv/
 /user/
 temp_args.json
 handler.py
+*.log
