@@ -59,23 +59,13 @@ from comfy.cli_args import Arguments
 import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
+import cuda_malloc
 
 ## End of Edit Block 1 ##
 
 if os.name == "nt":
     import logging
     logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
-
-if __name__ == "__main__":
-    if args.cuda_device is not None:
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
-        print("Set cuda device to:", args.cuda_device)
-
-    if args.deterministic:
-        if 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
-            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
-
-    import cuda_malloc
 
 import comfy.utils
 import yaml
@@ -273,13 +263,13 @@ def main_func(args_dict, child_conn=None, cmdline=False):
         folder_paths.set_temp_directory(temp_dir)
     cleanup_temp()
 
-    ## Check for Cuda Visible devices
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         print("Set cuda device to:", args.cuda_device)
 
-        import cuda_malloc
-    
+    if args.deterministic:
+        if 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
+            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
 
     # For debugging temp args JSON File
     with open("temp_args.json", 'r') as f:
