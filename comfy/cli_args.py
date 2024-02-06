@@ -79,9 +79,6 @@ def parse_args(arg_dict=None):
     fpunet_group.add_argument("--fp8_e4m3fn-unet", action="store_true", help="Store unet weights in fp8_e4m3fn.")
     fpunet_group.add_argument("--fp8_e5m2-unet", action="store_true", help="Store unet weights in fp8_e5m2.")
 
-
-    parser.add_argument("--bf16-unet", action="store_true", help="Run the UNET in bf16. This should only be used for testing stuff.")
-
     fpvae_group = parser.add_mutually_exclusive_group()
     fpvae_group.add_argument("--fp16-vae", action="store_true", help="Run the VAE in fp16, might cause black images.")
     fpvae_group.add_argument("--fp32-vae", action="store_true", help="Run the VAE in full precision fp32.")
