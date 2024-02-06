@@ -738,7 +738,8 @@ class PromptServer():
         # Check if the event is 'executed'
         if event == 'executed':
             filenames = []
-            if 'output' in data and 'images' in data['output'] and data['output']['images'][0]['type'] == 'output':
+            print(f"Output data: {data['output']}")
+            if 'output' in data and 'images' in data['output'] and len(data['output']['images']) > 0 and data['output']['images'][0]['type'] == 'output':
                 for image in data['output']['images']:
                     if 'filename' in image:
                         filenames.append(image['filename'])
