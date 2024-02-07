@@ -262,7 +262,7 @@ def upload_file(message):
                                  aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         bucket_name = message['aws_bucket']
 
-        folder = message.get("image_folder_output", message.get("image_folder"))
+        folder = message.get("image_folder_output", message.get("image_folder_input"))
         
 
         if folder is None:
