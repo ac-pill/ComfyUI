@@ -102,6 +102,7 @@ class PromptServer():
         self.last_node_id = None
         self.client_id = None
         self.user_prompt_map = {} ## To store USER related info
+        self.endpoint_connected = True
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
         self.pipe = pipe ## Hold Server state for Parent Process
@@ -526,6 +527,11 @@ class PromptServer():
                 self.folder_input = extra_data.get("image_folder_input", "gemz")
                 self.folder_output = extra_data.get("image_folder_output", "gemz")
                 self.payload = extra_data.get("payload")
+
+                if extra_data["client_id"] is not None:
+                    self.endpoint_connected = False
+                    print(f'Existing client ID: {extra_data["client_id"]}')
+                    print('Endpoint connect is False')
 
                 # Handling client_id
                 extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
