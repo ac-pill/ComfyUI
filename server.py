@@ -528,14 +528,14 @@ class PromptServer():
                 self.folder_output = extra_data.get("image_folder_output", "gemz")
                 self.payload = extra_data.get("payload")
 
-                if extra_data["client_id"] is not None:
-                    self.endpoint_connected = False
-                    print(f'Existing client ID: {extra_data["client_id"]}')
-                    print('Endpoint connect is False')
+                # if extra_data["client_id"] is not None:
+                #     self.endpoint_connected = False
+                #     print(f'Existing client ID: {extra_data["client_id"]}')
+                #     print('Endpoint connect is False')
 
-                # Handling client_id
-                extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
-                print(f'Client ID: {extra_data["client_id"]}')
+                # # Handling client_id
+                # extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
+                # print(f'Client ID: {extra_data["client_id"]}')
                 ### User ID added on client side if using API ###
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
