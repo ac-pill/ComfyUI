@@ -534,6 +534,7 @@ class PromptServer():
                     print(f'Existing client ID: {extra_data["client_id"]}')
                     print('Endpoint connect is True')
                 else:
+                    extra_data["client_id"] = str(uuid.uuid4().hex)
                     print('Endpoint connect is False')
 
                 # extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
