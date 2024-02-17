@@ -82,7 +82,7 @@ print("LOADING MAIN.PY - V09")
 
 def start_server(child_conn, call_on_start=None):
     global args
-    print(f'Arguments received: {args}')
+    # print(f'Arguments received: {args}')
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -250,7 +250,7 @@ def main_func(args_dict, child_conn=None, cmdline=False):
 
     ## Check if instance or command line
     if isinstance(args_dict, dict):
-        print(f'Args from shared.py:{args_dict}')
+        print(f'Args from handler.py:{args_dict}')
         args = args_class.init_args(args_dict)
     else: # assuming list of strings
         print(f'Args from command line:{args_dict}')
@@ -274,7 +274,7 @@ def main_func(args_dict, child_conn=None, cmdline=False):
     # For debugging temp args JSON File
     with open("temp_args.json", 'r') as f:
         tempargs = json.load(f)
-    print(f'JSON TEMP ARGS:{tempargs}')
+    # print(f'JSON TEMP ARGS:{tempargs}')
 
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
