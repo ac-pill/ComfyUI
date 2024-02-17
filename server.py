@@ -510,7 +510,7 @@ class PromptServer():
                 endpoint_image = None
                 endpoint_status = None
                 ### User ID added on client side if using API ###
-                print(f'EXTRA DATA: {extra_data}')
+                # print(f'EXTRA DATA: {extra_data}')
 
                 # Extracting values with default to None if key is not present
                 user_id = extra_data.get("user_id")
@@ -555,8 +555,8 @@ class PromptServer():
                         "channel_id": channel_id,
                         "endpoint_image": endpoint_image,
                     }
-                    print(f'VALID: {valid}')
-                    print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
+                    # print(f'VALID: {valid}')
+                    # print(f'USER MAP: {self.user_prompt_map[prompt_id]}')
                     ## End Edit Block
                     self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
                     response = {"prompt_id": prompt_id, "number": number, "node_errors": valid[3]}
