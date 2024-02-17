@@ -496,9 +496,9 @@ class PromptServer():
 
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
-                print(f'PROMPT to VALIDATE: {prompt}')
+                # print(f'PROMPT to VALIDATE: {prompt}')
                 valid = execution.validate_prompt(prompt)
-                print(f'Prompt for API: {valid}')
+                # print(f'Prompt for API: {valid}')
                 extra_data = {}
                 if "extra_data" in json_data:
                     extra_data = json_data["extra_data"]
@@ -537,8 +537,6 @@ class PromptServer():
                     extra_data["client_id"] = str(uuid.uuid4().hex)
                     print('Endpoint connect is False')
 
-                # extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
-                # print(f'Client ID: {extra_data["client_id"]}')
                 ### User ID added on client side if using API ###
                 if valid[0]:
                     prompt_id = str(uuid.uuid4())
@@ -735,10 +733,10 @@ class PromptServer():
         if self.endpoint_connected:
             # Get the prompt_id
             prompt_id = self.prompt_id
-            # Output events and nodes
-            print(f'EVENT: {event}')
-            print(f'DATA: {data}')
-            print(f'LAST NODE: {self.last_node_id}')
+            # # Output events and nodes
+            # print(f'EVENT: {event}')
+            # print(f'DATA: {data}')
+            # print(f'LAST NODE: {self.last_node_id}')
             # Get last node and add to executed
             if self.last_node_id is not None:
                 self.tracker.procstat_post(self.last_node_id, self.job_id, False)
