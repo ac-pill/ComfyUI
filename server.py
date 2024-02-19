@@ -529,13 +529,15 @@ class PromptServer():
                 self.payload = extra_data.get("payload")
 
                 # Handling client_id
-                if "client_id" in extra_data:
-                    self.endpoint_connected = True
-                    print(f'Existing client ID: {extra_data["client_id"]}')
-                    print('Endpoint connect is True')
-                else:
-                    extra_data["client_id"] = str(uuid.uuid4().hex)
-                    print('Endpoint connect is False')
+                # if "client_id" in extra_data:
+                #     self.endpoint_connected = True
+                #     print(f'Existing client ID: {extra_data["client_id"]}')
+                #     print('Endpoint connect is True')
+                # else:
+                #     extra_data["client_id"] = str(uuid.uuid4().hex)
+                #     print('Endpoint connect is False')
+                extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
+                print(f'Client ID: {extra_data["client_id"]}')
 
                 ### User ID added on client side if using API ###
                 if valid[0]:
@@ -803,6 +805,8 @@ class PromptServer():
         site = web.TCPSite(runner, address, port)
         await site.start()
 
+        if address == '':
+            address = '0.0.0.0'
         if verbose:
             print("Starting server\n")
             print("To see the GUI go to: http://{}:{}".format(address, port))
