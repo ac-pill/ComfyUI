@@ -753,29 +753,29 @@ class PromptServer():
                         if 'filename' in image:
                             filenames.append(image['filename'])
                     # Include the filenames in the data
-                    data['filenames'] = filenames
+                    # data['filenames'] = filenames
                     # Send message to bot
-                    bot_message = {
-                        "prompt_id": data['prompt_id'],
-                        "job_id": self.job_id,
-                        "aws_bucket": self.aws_bucket,
-                        "image_folder_input": self.folder_input,
-                        "image_folder_output": self.folder_output,
-                        "filenames": data['filenames'],
-                        "endpoint_image": self.user_prompt_map[prompt_id]["endpoint_image"],
-                        "payload": self.payload,
-                        "user_id": self.user_prompt_map[prompt_id]["user_id"],
-                        "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
-                        "prompt": self.msg_prompt,
-                        "neg_prompt": self.msg_neg_prompt,
-                        "seed": self.msg_seed
-                    }
-                    print(f'BOT MESSAGE: {bot_message}')
-                    # Send Files
-                    result = send_files(message=bot_message)
+                    # bot_message = {
+                    #     "prompt_id": data['prompt_id'],
+                    #     "job_id": self.job_id,
+                    #     "aws_bucket": self.aws_bucket,
+                    #     "image_folder_input": self.folder_input,
+                    #     "image_folder_output": self.folder_output,
+                    #     "filenames": data['filenames'],
+                    #     "endpoint_image": self.user_prompt_map[prompt_id]["endpoint_image"],
+                    #     "payload": self.payload,
+                    #     "user_id": self.user_prompt_map[prompt_id]["user_id"],
+                    #     "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
+                    #     "prompt": self.msg_prompt,
+                    #     "neg_prompt": self.msg_neg_prompt,
+                    #     "seed": self.msg_seed
+                    # }
+                    # print(f'BOT MESSAGE: {bot_message}')
+                    # # Send Files
+                    # result = send_files(message=bot_message)
                     # Check if result is a list before extending
-                    if isinstance(result, list):
-                        self.uploaded_filenames.extend(result)
+                    if isinstance(filenames, list):
+                        self.uploaded_filenames.extend(filenames)
                     else:
                         print("Error or no files returned from send_files")
             # Work is done
@@ -784,7 +784,7 @@ class PromptServer():
                     # Send Status as complete for JOB ID
                     if self.job_id is not None:
                         self.tracker.procstat_post(self.last_node_id, self.job_id, self.uploaded_filenames, self.payload)
-                    print(f'!!!!SHUTDOWN With Data info!!!!')
+                    print(f'!!!!SHUTDOWN Initiated!!!!')
                     shutdown(self.pipe)
         ## Edit on Original send_sync
 
