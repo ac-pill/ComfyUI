@@ -128,7 +128,7 @@ def start_server(child_conn, call_on_start=None):
     except Exception as e:
         print("Error occurred:", e)
     finally:
-        print("MAIN: Complete Task Loop")
+        print("MAIN: Task Complete")
 
 ## End of Edit Block 2 ##
 
