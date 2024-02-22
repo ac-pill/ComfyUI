@@ -282,7 +282,7 @@ def main_func(args_dict, child_conn=None, cmdline=False):
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         logger.info("Set cuda device to:", args.cuda_device)
 
-    logger.info(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
+    logger.info(f"Passing child_conn with id {id(child_conn)}")
 
     logger.info("Starting asyncio event loop")
 
