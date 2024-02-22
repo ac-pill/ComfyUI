@@ -784,6 +784,7 @@ class PromptServer():
                     # Send Status as complete for JOB ID
                     if self.job_id is not None:
                         self.tracker.procstat_post(self.last_node_id, self.job_id, self.uploaded_filenames, self.payload)
+                    filenames = []
                     print(f'!!!!SHUTDOWN Initiated!!!!')
                     shutdown(self.pipe)
         ## Edit on Original send_sync
