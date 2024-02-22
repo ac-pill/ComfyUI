@@ -55,11 +55,13 @@ import gc
 
 from comfy.cli_args import Arguments
 ## Start of Edit Block 1 ##
-
 import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
 import cuda_malloc
+from logger_config import get_logger
+logger = get_logger('main')
+
 
 ## End of Edit Block 1 ##
 
@@ -78,7 +80,7 @@ import comfy.model_management
 
 ## Start of Edit Block 2 ##
 args = None
-print("LOADING MAIN.PY - V09")
+logger.info("LOADING MAIN.PY - V09")
 
 def start_server(child_conn, call_on_start=None):
     global args
@@ -102,7 +104,7 @@ def start_server(child_conn, call_on_start=None):
     prompt_server.add_routes() # Changing name for clarity
     hijack_progress(prompt_server) # Changing name for clarity
 
-    print("Starting prompt_worker thread")
+    logger.info("Starting prompt_worker thread")
     threading.Thread(target=prompt_worker, daemon=True, args=(q,prompt_server,)).start() # Changing name for clarity
 
     if args.output_directory:
@@ -117,7 +119,7 @@ def start_server(child_conn, call_on_start=None):
 
     if args.input_directory:
         input_dir = os.path.abspath(args.input_directory)
-        print(f"Setting input directory to: {input_dir}")
+        logger.info(f"Setting input directory to: {input_dir}")
         folder_paths.set_input_directory(input_dir)
 
     if args.quick_test_for_ci:
@@ -126,9 +128,9 @@ def start_server(child_conn, call_on_start=None):
     try:
         loop.run_until_complete(run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start))
     except Exception as e:
-        print("Error occurred:", e)
+        logger.info("Error occurred:", e)
     finally:
-        print("MAIN: Task Complete")
+        logger.info("Task Complete")
 
 ## End of Edit Block 2 ##
 
@@ -242,7 +244,7 @@ def load_extra_path_config(yaml_path):
 
 def main_func(args_dict, child_conn=None, cmdline=False):
     
-    print("Starting Server")
+    logger.info("Starting Server")
 
     args_class = Arguments()
 
@@ -250,22 +252,22 @@ def main_func(args_dict, child_conn=None, cmdline=False):
 
     ## Check if instance or command line
     if isinstance(args_dict, dict):
-        print(f'Args from handler.py:{args_dict}')
+        logger.info(f'Args from handler.py:{args_dict}')
         args = args_class.init_args(args_dict)
     else: # assuming list of strings
-        print(f'Args from command line:{args_dict}')
+        logger.info(f'Args from command line:{args_dict}')
         args = args_class.init_args()
         # Note: you'll need to modify init_args function to take command line arguments
     
     if args.temp_directory:
         temp_dir = os.path.join(os.path.abspath(args.temp_directory), "temp")
-        print(f"Setting temp directory to: {temp_dir}")
+        logger.info(f"Setting temp directory to: {temp_dir}")
         folder_paths.set_temp_directory(temp_dir)
     cleanup_temp()
 
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
-        print("Set cuda device to:", args.cuda_device)
+        logger.info("Set cuda device to:", args.cuda_device)
 
     if args.deterministic:
         if 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
@@ -278,11 +280,11 @@ def main_func(args_dict, child_conn=None, cmdline=False):
 
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
-        print("Set cuda device to:", args.cuda_device)
+        logger.info("Set cuda device to:", args.cuda_device)
 
-    print(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
+    logger.info(f"Passing child_conn with id {id(child_conn)} from MAIN.PY")
 
-    print("Starting asyncio event loop")
+    logger.info("Starting asyncio event loop")
 
     call_on_start = None
     if args.auto_launch:
@@ -294,7 +296,7 @@ def main_func(args_dict, child_conn=None, cmdline=False):
         call_on_start = startup_server
 
     if cmdline:
-        print("Arguments from command line")
+        logger.info("Arguments from command line")
         start_server(child_conn, call_on_start=call_on_start)
         
     else:
