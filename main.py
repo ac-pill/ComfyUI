@@ -60,7 +60,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 import cuda_malloc
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("Main:")
 
 
 ## End of Edit Block 1 ##
