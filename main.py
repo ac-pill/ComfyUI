@@ -59,8 +59,8 @@ import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
 import cuda_malloc
-from logger_config import get_logger
-logger = get_logger('main')
+import logging
+logger = logging.getLogger(__name__)
 
 
 ## End of Edit Block 1 ##
