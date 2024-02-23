@@ -35,6 +35,9 @@ import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from lib_api import NodeProgressTracker, AsyncImageSender, shutdown, delete_images, send_files
 
+import logging
+logger = logging.getLogger("Server")
+
 ## End Block Change
 from app.user_manager import UserManager
 
@@ -496,6 +499,7 @@ class PromptServer():
 
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
+                logger.info(f'Child conn pipe ID on Prompt get: {id(self.pipe)}')
                 # print(f'PROMPT to VALIDATE: {prompt}')
                 valid = execution.validate_prompt(prompt)
                 # print(f'Prompt for API: {valid}')
@@ -531,11 +535,11 @@ class PromptServer():
                 # Handling client_id
                 if "client_id" in extra_data:
                     self.endpoint_connected = True
-                    print(f'Existing client ID: {extra_data["client_id"]}')
-                    print('Endpoint connect is True')
+                    logger.info(f'Existing client ID: {extra_data["client_id"]}')
+                    logger.info('Endpoint connect is True')
                 else:
                     extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
-                    print('Endpoint connect is False')
+                    logger.info('Endpoint connect is False')
                 # extra_data["client_id"] = json_data.get("client_id", str(uuid.uuid4().hex))
                 # print(f'Client ID: {extra_data["client_id"]}')
 
@@ -546,7 +550,7 @@ class PromptServer():
                     outputs_to_execute = valid[2]
                     ## instantiate tracker
                     self.node_list = list(prompt.keys())
-                    print(f'NODE LIST: {self.node_list}')
+                    logger.info(f'NODE LIST: {self.node_list}')
                     self.tracker = NodeProgressTracker(loop, self.node_list, endpoint_status)
                     ## instantiate uploader
                     # self.async_upload = AsyncImageSender(loop, )
@@ -573,7 +577,7 @@ class PromptServer():
                         "channel_id": channel_id,
                         "message": message
                     }
-                    print(f'BOT MESSAGE: {bot_message}')
+                    logger.error(f'BOT MESSAGE: {bot_message}')
                     shutdown(self.pipe)
                     ## End Edit Block
                     return web.json_response({"error": valid[1], "node_errors": valid[3]}, status=400)
@@ -587,7 +591,7 @@ class PromptServer():
                     "channel_id": channel_id,
                     "message": message
                 }
-                print(f'BOT MESSAGE: {bot_message}')
+                logger.error(f'BOT MESSAGE: {bot_message}')
                 shutdown(self.pipe)
                 ## End Edit Block
                 return web.json_response({"error": "no prompt", "node_errors": []}, status=400)
@@ -743,41 +747,20 @@ class PromptServer():
             if self.last_node_id is not None:
                 self.tracker.procstat_post(self.last_node_id, self.job_id, False)
                 self.tracker.mark_as_executed(self.last_node_id)
-                print(f"Progress: {self.tracker.get_progress_percentage()}%")
+                logger.info(f"Progress: {self.tracker.get_progress_percentage()}%")
             # Check if the event is 'executed'
             if event == 'executed':
                 filenames = []
-                print(f"Output data: {data['output']}")
+                logger.info(f"Output data: {data['output']}")
                 if 'output' in data and 'images' in data['output'] and len(data['output']['images']) > 0 and data['output']['images'][0]['type'] == 'output':
                     for image in data['output']['images']:
                         if 'filename' in image:
                             filenames.append(image['filename'])
-                    # Include the filenames in the data
-                    # data['filenames'] = filenames
-                    # Send message to bot
-                    # bot_message = {
-                    #     "prompt_id": data['prompt_id'],
-                    #     "job_id": self.job_id,
-                    #     "aws_bucket": self.aws_bucket,
-                    #     "image_folder_input": self.folder_input,
-                    #     "image_folder_output": self.folder_output,
-                    #     "filenames": data['filenames'],
-                    #     "endpoint_image": self.user_prompt_map[prompt_id]["endpoint_image"],
-                    #     "payload": self.payload,
-                    #     "user_id": self.user_prompt_map[prompt_id]["user_id"],
-                    #     "channel_id": self.user_prompt_map[prompt_id]["channel_id"],
-                    #     "prompt": self.msg_prompt,
-                    #     "neg_prompt": self.msg_neg_prompt,
-                    #     "seed": self.msg_seed
-                    # }
-                    # print(f'BOT MESSAGE: {bot_message}')
-                    # # Send Files
-                    # result = send_files(message=bot_message)
                     # Check if result is a list before extending
                     if isinstance(filenames, list):
                         self.uploaded_filenames.extend(filenames)
                     else:
-                        print("Error or no files returned from send_files")
+                        logger.error("Error or no files returned from send_files")
             # Work is done
             elif event == 'executing':
                 if data['node'] is None and data['prompt_id'] == prompt_id:
@@ -786,7 +769,8 @@ class PromptServer():
                         self.tracker.procstat_post(self.last_node_id, self.job_id, self.uploaded_filenames, self.payload)
                     filenames = []
                     self.uploaded_filenames = []
-                    print(f'!!!!SHUTDOWN Initiated!!!!')
+                    logger.warn(f'<<< SHUTDOWN Initiated >>>')
+                    logger.info(f'Child conn id on shutdown: {id(self.pipe)}')
                     shutdown(self.pipe)
         ## Edit on Original send_sync
 

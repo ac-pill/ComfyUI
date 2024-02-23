@@ -19,6 +19,9 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 import nodes
 import folder_paths
 
+import logging
+logger = logging.getLogger("Lib")
+
 load_dotenv()
 
 # Load environment variables
@@ -153,9 +156,9 @@ class NodeProgressTracker:
     
     # Post Status
     def procstat_post(self, last_node_id, job_id, filenames=None, payload=None):
-        print('Start ProcStat')
+        logger.info('Start ProcStat')
         if last_node_id not in self.executed_nodes:
-            print(f'PROCSTAT TRIGGERED: {last_node_id}')
+            logger.info(f'PROCSTAT TRIGGERED: {last_node_id}')
             self.queue.put_nowait(last_node_id)
             asyncio.run_coroutine_threadsafe(self.handle_queue(job_id, filenames, payload), self.loop)
         elif last_node_id is None:
@@ -170,18 +173,18 @@ class NodeProgressTracker:
     async def a_procstat_post(self, last_node_id, job_id, filenames, payload):
             procinfo = self.get_proc_info(last_node_id, job_id, filenames, payload)
             endpoint_url = self.endpoint_url
-            print(f'POSTING Progress: {endpoint_url}')
+            logger.info(f'POSTING Progress: {endpoint_url}')
             try:
                 # Using the aiohttp ClientSession from existing imports
                 async with aiohttp.ClientSession() as session:
                     response = await session.post(f'{endpoint_url}', json=procinfo)
                     if response.status == 200:
                         response_text = await response.text()
-                        print(response_text)
+                        logger.info(response_text)
                     else:
-                        print(f"Received a {response.status} status code from the bot.")
+                        logger.info(f"Received a {response.status} status code from the bot.")
             except Exception as e:
-                print("Failed to send POST to bot.", traceback.format_exc())
+                logger.info("Failed to send POST to bot.", traceback.format_exc())
             return web.json_response(procinfo)
 
 ## Shutdown Server
@@ -189,25 +192,25 @@ def shutdown(pipe, message=None):
     # Check if the pipe exists
     if pipe:
         # Send the 'shutdown' command through the pipe
-        print("Shutdown Process")
-        print(f"Shutdown Message: \nUsing pipe with id {id(pipe)} to send shutdown")
+        logger.info("Shutdown Process")
+        logger.info(f"Shutdown Message: \nUsing pipe with id {id(pipe)} to send shutdown")
         delete_all_input_files()
         pipe.send('shutdown')
     else:
-        print("Cannot shutdown because the pipe is not connected.")
+        logger.info("Cannot shutdown because the pipe is not connected.")
 
     # Print Input and Output file count
     output_directory = folder_paths.get_output_directory()
     input_directory = folder_paths.get_input_directory()
-    print(f'Output Folder Count: {len(os.listdir(output_directory))}')
-    print(f'Input Folder Count: {len(os.listdir(input_directory))}')
+    logger.info(f'Output Folder Count: {len(os.listdir(output_directory))}')
+    logger.info(f'Input Folder Count: {len(os.listdir(input_directory))}')
 
     return
     
 ## Send Executed Image to API
 def send_files(message):
-    print(f"Function send message to BOT")
-    print(f"BOT MESSAGE: {message}")
+    logger.info(f"Function send message to BOT")
+    logger.info(f"BOT MESSAGE: {message}")
     # The address of bot's server
     if (message["aws_bucket"] is not None or message["endpoint_image"] is not None):
         # Upload Files
@@ -231,9 +234,9 @@ def delete_images(filenames):
         file_path = os.path.join(output_directory, filename)
         try:
             os.remove(file_path)
-            print(f"Deleted file: {file_path}")
+            logger.info(f"Deleted file: {file_path}")
         except Exception as e:
-            print(f"Could not delete file {file_path}. Reason: {e}")
+            logger.info(f"Could not delete file {file_path}. Reason: {e}")
 
 ## Delete All Input Files
 def delete_all_input_files():
@@ -243,21 +246,21 @@ def delete_all_input_files():
         try:
             if os.path.isfile(file_path):
                 os.remove(file_path)
-                print(f"Deleted file: {file_path}")
+                logger.info(f"Deleted file: {file_path}")
         except Exception as e:
-            print(f"Could not delete file {file_path}. Reason: {e}")
+            logger.info(f"Could not delete file {file_path}. Reason: {e}")
 
 ## Upload files to Task Server / Task Server - Need to serve POST and AWS scenarios
 def upload_file(message):
     filenames = message['filenames']
     final_filenames = []
     # Loop over all filenames and upload each file
-    print(f'Filenames on UPLOAD: {filenames}')
+    logger.info(f'Filenames on UPLOAD: {filenames}')
     output = folder_paths.get_output_directory()
 
     # S3 Upload
     if message.get("aws_bucket"):
-        print("Using AWS Server")
+        logger.info("Using AWS Server")
         s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, 
                                  aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         bucket_name = message['aws_bucket']
@@ -266,7 +269,7 @@ def upload_file(message):
         
 
         if folder is None:
-            print(f'Output Folder is set to None, saving on default Gemz folder')
+            logger.info(f'Output Folder is set to None, saving on default Gemz folder')
             folder = 'gemz'
 
         if not bucket_exists(s3_client, bucket_name):
@@ -278,14 +281,14 @@ def upload_file(message):
             s3_object_key = final_filename
             try:
                 s3_client.upload_file(filepath, bucket_name, s3_object_key)
-                print(f"File '{filepath}' uploaded to '{bucket_name}' as '{s3_object_key}' successfully.")
+                logger.info(f"File '{filepath}' uploaded to '{bucket_name}' as '{s3_object_key}' successfully.")
                 final_filenames.append(final_filename)
             except Exception as e:
-                print(f"Error uploading file to S3: {str(e)}")
+                logger.info(f"Error uploading file to S3: {str(e)}")
 
      # Endpoint Upload
     elif message.get("endpoint_image"):
-        print("Using image endpoint")
+        logger.info("Using image endpoint")
         for filename in filenames:
             filepath = os.path.join(output, filename)
             final_filename = filename
@@ -303,9 +306,9 @@ def create_bucket(s3_client, name, region=None):
         else:
             location = {'LocationConstraint': region}
             s3_client.create_bucket(Bucket=name, CreateBucketConfiguration=location)
-        print(f"Bucket {name} created.")
+        logger.info(f"Bucket {name} created.")
     except ClientError as e:
-        print(f"Error: {e}")
+        logger.info(f"Error: {e}")
         return False
     return True
 
@@ -334,8 +337,8 @@ def upload_file_to_endpoint(endpoint_url, filepath, filename, message):
         headers = {'Content-Type': multipart_data.content_type}
         response = requests.post(endpoint_url, headers=headers, data=multipart_data)
         if response.status_code != 200:
-            print(f'Failed to upload file {filename}: {response.content}')
+            logger.info(f'Failed to upload file {filename}: {response.content}')
         else:
-            print(f'Uploaded file {filename}: {response.content}')
+            logger.info(f'Uploaded file {filename}: {response.content}')
 
 ## Missing status with filenames

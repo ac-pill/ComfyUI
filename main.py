@@ -60,7 +60,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 import cuda_malloc
 import logging
-logger = logging.getLogger("Main:")
+logger = logging.getLogger("Main")
 
 
 ## End of Edit Block 1 ##
@@ -84,7 +84,7 @@ logger.info("LOADING MAIN.PY - V09")
 
 def start_server(child_conn, call_on_start=None):
     global args
-    # print(f'Arguments received: {args}')
+    logger.info(f'Child Pipe ID: {id(child_conn)}')
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
