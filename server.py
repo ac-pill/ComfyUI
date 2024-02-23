@@ -76,7 +76,7 @@ def create_cors_middleware(allowed_origin: str):
     return cors_middleware
 
 class PromptServer():
-    def __init__(self, loop, pipe=None):
+    def __init__(self, loop, cls_pipe_manager=None):
         PromptServer.instance = self
 
         mimetypes.init()
@@ -108,7 +108,7 @@ class PromptServer():
         self.endpoint_connected = False ## API signals off or on
         self.prompt_id = 0 ## hold the prompt id on class level
         self.prompt_filenames_map = {} ## Hold the filename outputs
-        self.pipe = pipe ## Hold Server state for Parent Process
+        self.cls_pipe_manager = cls_pipe_manager ## Hold Server Class communication manager
         self.msg_prompt = None ## Hold the prompt stated by user
         self.msg_neg_prompt = None ## Hold the negative prompt stated by user
         self.msg_seed = None ## Hold the seed stated by user
@@ -499,7 +499,7 @@ class PromptServer():
 
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
-                logger.info(f'Child conn pipe ID on Prompt get: {id(self.pipe)}')
+                logger.info(f'Starting Prompt task with message: {self.cls_pipe_manager.receive_message()}')
                 # print(f'PROMPT to VALIDATE: {prompt}')
                 valid = execution.validate_prompt(prompt)
                 # print(f'Prompt for API: {valid}')
@@ -578,7 +578,7 @@ class PromptServer():
                         "message": message
                     }
                     logger.error(f'BOT MESSAGE: {bot_message}')
-                    shutdown(self.pipe)
+                    shutdown(self.cls_pipe_manager)
                     ## End Edit Block
                     return web.json_response({"error": valid[1], "node_errors": valid[3]}, status=400)
 
@@ -592,7 +592,7 @@ class PromptServer():
                     "message": message
                 }
                 logger.error(f'BOT MESSAGE: {bot_message}')
-                shutdown(self.pipe)
+                shutdown(self.cls_pipe_manager)
                 ## End Edit Block
                 return web.json_response({"error": "no prompt", "node_errors": []}, status=400)
 
@@ -770,8 +770,9 @@ class PromptServer():
                     filenames = []
                     self.uploaded_filenames = []
                     logger.warn(f'<<< SHUTDOWN Initiated >>>')
-                    logger.info(f'Child conn id on shutdown: {id(self.pipe)}')
-                    shutdown(self.pipe)
+                    logger.info(f'Message before shutdown: {self.cls_pipe_manager.receive_message()}')
+                    shutdown(self.cls_pipe_manager)
+                    logger.info(f'Message after shutdown: {self.cls_pipe_manager.receive_message()}')
         ## Edit on Original send_sync
 
         self.loop.call_soon_threadsafe(
@@ -797,9 +798,11 @@ class PromptServer():
             print("Starting server\n")
             print("To see the GUI go to: http://{}:{}".format(address, port))
         if call_on_start is not None:
-            print("Auto Start Command Running")
-            print(f"Using pipe with id {id(self.pipe)} to send message")
-            self.pipe.send('ready')
+            ## Auto start edits start
+            logger.info("Auto Start Command Running")
+            self.cls_pipe_manager.send_message('ready')
+            logger.info(f"Server Ready sending message {self.cls_pipe_manager.receive_message()}")
+            ## Auto start edits end
             call_on_start(address, port)
 
     def add_on_prompt_handler(self, handler):

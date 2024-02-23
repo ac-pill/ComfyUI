@@ -82,13 +82,13 @@ import comfy.model_management
 args = None
 logger.info("LOADING MAIN.PY - V09")
 
-def start_server(child_conn, call_on_start=None):
+def start_server(cls_pipe_manager, call_on_start=None):
     global args
-    logger.info(f'Child Pipe ID: {id(child_conn)}')
+    logger.info(f'Starting server pipe_manager with message: {cls_pipe_manager.receive_message()}')
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    prompt_server = server.PromptServer(loop, child_conn) # Changing here for adding pipe communication
+    prompt_server = server.PromptServer(loop, cls_pipe_manager) # Changing here for adding pipe communication
     q = execution.PromptQueue(prompt_server)
 
     extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
@@ -242,7 +242,7 @@ def load_extra_path_config(yaml_path):
                 folder_paths.add_model_folder_path(x, full_path)
 
 
-def main_func(args_dict, child_conn=None, cmdline=False):
+def main_func(args_dict, cls_pipe_manager=None, cmdline=False):
     
     logger.info("Starting Server")
 
@@ -282,7 +282,7 @@ def main_func(args_dict, child_conn=None, cmdline=False):
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
         logger.info("Set cuda device to:", args.cuda_device)
 
-    logger.info(f"Passing child_conn with id {id(child_conn)}")
+    logger.info(f"Passing pipe_manager with message {cls_pipe_manager.receive_message()}")
 
     logger.info("Starting asyncio event loop")
 
@@ -297,11 +297,11 @@ def main_func(args_dict, child_conn=None, cmdline=False):
 
     if cmdline:
         logger.info("Arguments from command line")
-        start_server(child_conn, call_on_start=call_on_start)
+        start_server(cls_pipe_manager, call_on_start=call_on_start)
         
     else:
         executor = ThreadPoolExecutor(max_workers=1)
-        future = executor.submit(start_server, child_conn, call_on_start=call_on_start)
+        future = executor.submit(start_server, cls_pipe_manager, call_on_start=call_on_start)
 
     cleanup_temp()
 

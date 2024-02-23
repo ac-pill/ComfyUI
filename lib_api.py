@@ -188,16 +188,15 @@ class NodeProgressTracker:
             return web.json_response(procinfo)
 
 ## Shutdown Server
-def shutdown(pipe, message=None):
-    # Check if the pipe exists
-    if pipe:
-        # Send the 'shutdown' command through the pipe
+def shutdown(cls_pipe_manager, message=None):
+    # Check if the class exists
+    if cls_pipe_manager:
+        # Send the 'shutdown' command through the class
         logger.info("Shutdown Process")
-        logger.info(f"Shutdown Message: \nUsing pipe with id {id(pipe)} to send shutdown")
         delete_all_input_files()
-        pipe.send('shutdown')
+        cls_pipe_manager.send_message('shutdown')
     else:
-        logger.info("Cannot shutdown because the pipe is not connected.")
+        logger.info("Cannot shutdown because the class is not created.")
 
     # Print Input and Output file count
     output_directory = folder_paths.get_output_directory()
@@ -342,3 +341,16 @@ def upload_file_to_endpoint(endpoint_url, filepath, filename, message):
             logger.info(f'Uploaded file {filename}: {response.content}')
 
 ## Missing status with filenames
+## Pipe Manager
+class PipeManager:
+    def __init__(self, message):
+        self.message = message
+
+    def send_message(self, message):
+        self.message = message
+        logger.info(f"Message '{self.message}' sent through class.")
+        return self.message
+
+    def receive_message(self):
+        logger.info(f"Message received: {self.message}")
+        return self.message
