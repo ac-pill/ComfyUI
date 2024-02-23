@@ -348,9 +348,9 @@ class PipeManager:
 
     def send_message(self, message):
         self.message = message
-        logger.info(f"Message '{self.message}' sent through class.")
+        # logger.info(f"Message '{self.message}' sent through class.")
         return self.message
 
     def receive_message(self):
-        logger.info(f"Message received: {self.message}")
+        # logger.info(f"Message received: {self.message}")
         return self.message
