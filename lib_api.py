@@ -177,14 +177,15 @@ class NodeProgressTracker:
             try:
                 # Using the aiohttp ClientSession from existing imports
                 async with aiohttp.ClientSession() as session:
-                    response = await session.post(f'{endpoint_url}', json=procinfo)
-                    if response.status == 200:
-                        response_text = await response.text()
-                        logger.info(response_text)
-                    else:
-                        logger.info(f"Received a {response.status} status code from the bot.")
+                    async with session.post(f'{endpoint_url}', json=procinfo) as response:
+                    # response = await session.post(f'{endpoint_url}', json=procinfo)
+                        if response.status == 200:
+                            response_text = await response.text()
+                            logger.info(response_text)
+                        else:
+                            logger.info(f"Received a {response.status} status code from the endpoint.")
             except Exception as e:
-                logger.info("Failed to send POST to bot.", traceback.format_exc())
+                logger.info("Failed to send POST to endpoint.", traceback.format_exc())
             return web.json_response(procinfo)
 
 ## Shutdown Server
