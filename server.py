@@ -771,8 +771,12 @@ class PromptServer():
                     self.uploaded_filenames = []
                     logger.warn(f'<<< SHUTDOWN Initiated >>>')
                     logger.info(f'Message before shutdown: {self.cls_pipe_manager.receive_message()}')
-                    shutdown(self.cls_pipe_manager)
-                    logger.info(f'Message after shutdown: {self.cls_pipe_manager.receive_message()}')
+                    if self.cls_pipe_manager.receive_message() == 'ready':
+                        shutdown(self.cls_pipe_manager)
+                        logger.info(f'Message after shutdown: {self.cls_pipe_manager.receive_message()}')
+                    else:
+                        # Server is hot
+                        logger.info(f'Shutdown not allowed on Hot Server mode')
         ## Edit on Original send_sync
 
         self.loop.call_soon_threadsafe(

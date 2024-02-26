@@ -250,6 +250,14 @@ def main_func(args_dict, cls_pipe_manager=None, cmdline=False):
 
     global args
 
+    if cls_pipe_manager is None:
+        # We are likely in hot server mode; initialize PipeManager
+        from lib_api import PipeManager
+        cls_pipe_manager = PipeManager('hotserver')
+    else:
+        # We are in serverless mode; set a special message
+        pass
+
     ## Check if instance or command line
     if isinstance(args_dict, dict):
         logger.info(f'Args from handler.py:{args_dict}')
