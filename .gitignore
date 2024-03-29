@@ -17,4 +17,5 @@ venv/
 /tests-ui/data/object_info.json
 /user/
 temp_args.json
+handler.py
 *.log
