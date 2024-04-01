@@ -578,7 +578,9 @@ class PromptServer():
                         "message": message
                     }
                     logger.error(f'BOT MESSAGE: {bot_message}')
-                    shutdown(self.cls_pipe_manager)
+                    if self.cls_pipe_manager.receive_message() == 'ready':
+                        shutdown(self.cls_pipe_manager)
+                        logger.info(f'Message after shutdown: {self.cls_pipe_manager.receive_message()}')
                     ## End Edit Block
                     return web.json_response({"error": valid[1], "node_errors": valid[3]}, status=400)
 
@@ -592,7 +594,9 @@ class PromptServer():
                     "message": message
                 }
                 logger.error(f'BOT MESSAGE: {bot_message}')
-                shutdown(self.cls_pipe_manager)
+                if self.cls_pipe_manager.receive_message() == 'ready':
+                        shutdown(self.cls_pipe_manager)
+                        logger.info(f'Message after shutdown: {self.cls_pipe_manager.receive_message()}')
                 ## End Edit Block
                 return web.json_response({"error": "no prompt", "node_errors": []}, status=400)
 

@@ -194,7 +194,8 @@ def shutdown(cls_pipe_manager, message=None):
     if cls_pipe_manager:
         # Send the 'shutdown' command through the class
         logger.info("Shutdown Process")
-        delete_all_input_files()
+        ## Cannot delete all input files, only the uploaded by user, how to track that?
+        # delete_all_input_files()
         cls_pipe_manager.send_message('shutdown')
     else:
         logger.info("Cannot shutdown because the class is not created.")
