@@ -499,9 +499,9 @@ class PromptServer():
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
                 logger.info(f'Starting Prompt task with message: {self.cls_pipe_manager.receive_message()}')
-                print(f'PROMPT to VALIDATE: {prompt}')
+                # print(f'PROMPT to VALIDATE: {prompt}')
                 valid = execution.validate_prompt(prompt)
-                print(f'Prompt for API: {valid}')
+                # print(f'Prompt for API: {valid}')
                 extra_data = {}
                 if "extra_data" in json_data:
                     extra_data = json_data["extra_data"]
