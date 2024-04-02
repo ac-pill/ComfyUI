@@ -22,7 +22,7 @@ import folder_paths
 import logging
 logger = logging.getLogger("Lib")
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Load environment variables
 # Ensure that the actual names of the environment variables are specified

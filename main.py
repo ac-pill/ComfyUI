@@ -80,7 +80,7 @@ import comfy.model_management
 
 ## Start of Edit Block 2 ##
 args = None
-logger.info("LOADING MAIN.PY - V09")
+logger.info("LOADING MAIN.PY - V10")
 
 def start_server(cls_pipe_manager, call_on_start=None):
     global args
