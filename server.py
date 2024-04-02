@@ -496,7 +496,6 @@ class PromptServer():
                         number = -number
 
                 self.number += 1
-            print(json_data.get("prompt"))
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
                 logger.info(f'Starting Prompt task with message: {self.cls_pipe_manager.receive_message()}')
