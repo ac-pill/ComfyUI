@@ -66,7 +66,6 @@ logger = logging.getLogger("Main")
 ## End of Edit Block 1 ##
 
 if os.name == "nt":
-    import logging
     logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
 import comfy.utils
@@ -144,7 +143,7 @@ def cuda_malloc_warning():
             if b in device_name:
                 cuda_malloc_warning = True
         if cuda_malloc_warning:
-            print("\nWARNING: this card most likely does not support cuda-malloc, if you get \"CUDA error\" please run ComfyUI with: --disable-cuda-malloc\n")
+            logging.warning("\nWARNING: this card most likely does not support cuda-malloc, if you get \"CUDA error\" please run ComfyUI with: --disable-cuda-malloc\n")
 
 def prompt_worker(q, server):
     e = execution.PromptExecutor(server)
@@ -177,7 +176,7 @@ def prompt_worker(q, server):
 
             current_time = time.perf_counter()
             execution_time = current_time - execution_start_time
-            print("Prompt executed in {:.2f} seconds".format(execution_time))
+            logging.info("Prompt executed in {:.2f} seconds".format(execution_time))
 
         flags = q.get_flags()
         free_memory = flags.get("free_memory", False)
@@ -195,6 +194,7 @@ def prompt_worker(q, server):
         if need_gc:
             current_time = time.perf_counter()
             if (current_time - last_gc_collect) > gc_collect_interval:
+                comfy.model_management.cleanup_models()
                 gc.collect()
                 comfy.model_management.soft_empty_cache()
                 last_gc_collect = current_time
@@ -238,7 +238,7 @@ def load_extra_path_config(yaml_path):
                 full_path = y
                 if base_path is not None:
                     full_path = os.path.join(base_path, full_path)
-                print("Adding extra search path", x, full_path)
+                logging.info("Adding extra search path {} {}".format(x, full_path))
                 folder_paths.add_model_folder_path(x, full_path)
 
 
@@ -249,6 +249,14 @@ def main_func(args_dict, cls_pipe_manager=None, cmdline=False):
     args_class = Arguments()
 
     global args
+
+    if args.cuda_device is not None:
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
+        logging.info("Set cuda device to: {}".format(args.cuda_device))
+
+    if args.deterministic:
+        if 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
+            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
 
     if cls_pipe_manager is None:
         # We are likely in hot server mode; initialize PipeManager
@@ -273,22 +281,17 @@ def main_func(args_dict, cls_pipe_manager=None, cmdline=False):
         folder_paths.set_temp_directory(temp_dir)
     cleanup_temp()
 
-    if args.cuda_device is not None:
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
-        logger.info("Set cuda device to:", args.cuda_device)
-
-    if args.deterministic:
-        if 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
-            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
+    if args.windows_standalone_build:
+        try:
+            import new_updater
+            new_updater.update_windows_updater()
+        except:
+            pass
 
     # For debugging temp args JSON File
     with open("temp_args.json", 'r') as f:
         tempargs = json.load(f)
     # print(f'JSON TEMP ARGS:{tempargs}')
-
-    if args.cuda_device is not None:
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
-        logger.info("Set cuda device to:", args.cuda_device)
 
     logger.info(f"Passing pipe_manager with message {cls_pipe_manager.receive_message()}")
 
