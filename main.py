@@ -250,14 +250,6 @@ def main_func(args_dict, cls_pipe_manager=None, cmdline=False):
 
     global args
 
-    if args.cuda_device is not None:
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
-        logging.info("Set cuda device to: {}".format(args.cuda_device))
-
-    if args.deterministic:
-        if 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
-            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
-
     if cls_pipe_manager is None:
         # We are likely in hot server mode; initialize PipeManager
         from lib_api import PipeManager
@@ -280,6 +272,14 @@ def main_func(args_dict, cls_pipe_manager=None, cmdline=False):
         logger.info(f"Setting temp directory to: {temp_dir}")
         folder_paths.set_temp_directory(temp_dir)
     cleanup_temp()
+
+    if args.cuda_device is not None:
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
+        logging.info("Set cuda device to: {}".format(args.cuda_device))
+
+    if args.deterministic:
+        if 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
+            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
 
     if args.windows_standalone_build:
         try:
