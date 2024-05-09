@@ -121,7 +121,6 @@ def parse_args(arg_dict=None):
     vram_group.add_argument("--lowvram", action="store_true", help="Split the unet in parts to use less vram.")
     vram_group.add_argument("--novram", action="store_true", help="When lowvram isn't enough.")
     vram_group.add_argument("--cpu", action="store_true", help="To use the CPU for everything (slow).")
-    
 
     parser.add_argument("--disable-smart-memory", action="store_true", help="Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.")
     parser.add_argument("--deterministic", action="store_true", help="Make pytorch use slower deterministic algorithms when it can. Note that this might not make images deterministic in all cases.")
@@ -132,7 +131,6 @@ def parse_args(arg_dict=None):
 
     parser.add_argument("--disable-metadata", action="store_true", help="Disable saving prompt metadata in files.")
     parser.add_argument("--multi-user", action="store_true", help="Enables per-user storage.")
-    parser.add_argument("--verbose", action="store_true", help="Enables more debug prints.")
 
     if arg_dict is not None:
         # Parse the provided dictionary of arguments
