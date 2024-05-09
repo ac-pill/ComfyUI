@@ -83,6 +83,7 @@ def parse_args(arg_dict=None):
     fpvae_group.add_argument("--fp16-vae", action="store_true", help="Run the VAE in fp16, might cause black images.")
     fpvae_group.add_argument("--fp32-vae", action="store_true", help="Run the VAE in full precision fp32.")
     fpvae_group.add_argument("--bf16-vae", action="store_true", help="Run the VAE in bf16.")
+    
     parser.add_argument("--cpu-vae", action="store_true", help="Run the VAE on the CPU.")
     parser.add_argument("--verbose", action="store_true", help="Enables more debug prints.")
 
