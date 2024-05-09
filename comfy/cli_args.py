@@ -54,6 +54,8 @@ def parse_args(arg_dict=None):
 
     parser.add_argument("--listen", type=str, default="127.0.0.1", metavar="IP", nargs="?", const="0.0.0.0", help="Specify the IP address to listen on (default: 127.0.0.1). If --listen is provided without an argument, it defaults to 0.0.0.0. (listens on all)")
     parser.add_argument("--port", type=int, default=8188, help="Set the listen port.")
+    parser.add_argument("--tls-keyfile", type=str, help="Path to TLS (SSL) key file. Enables TLS, makes app accessible at https://... requires --tls-certfile to function")
+    parser.add_argument("--tls-certfile", type=str, help="Path to TLS (SSL) certificate file. Enables TLS, makes app accessible at https://... requires --tls-keyfile to function")
     parser.add_argument("--enable-cors-header", type=str, default=None, metavar="ORIGIN", nargs="?", const="*", help="Enable CORS (Cross-Origin Resource Sharing) with optional origin or allow all with default '*'.")
     parser.add_argument("--max-upload-size", type=float, default=100, help="Set the maximum upload size in MB.")
     parser.add_argument("--extra-model-paths-config", type=str, default=None, metavar="PATH", nargs='+', action='append', help="Load one or more extra_model_paths.yaml files.")
@@ -83,9 +85,10 @@ def parse_args(arg_dict=None):
     fpvae_group.add_argument("--fp16-vae", action="store_true", help="Run the VAE in fp16, might cause black images.")
     fpvae_group.add_argument("--fp32-vae", action="store_true", help="Run the VAE in full precision fp32.")
     fpvae_group.add_argument("--bf16-vae", action="store_true", help="Run the VAE in bf16.")
-    
+
     parser.add_argument("--cpu-vae", action="store_true", help="Run the VAE on the CPU.")
     parser.add_argument("--verbose", action="store_true", help="Enables more debug prints.")
+
 
     if comfy.options.args_parsing:
         args = parser.parse_args()
@@ -129,6 +132,7 @@ def parse_args(arg_dict=None):
 
     parser.add_argument("--disable-metadata", action="store_true", help="Disable saving prompt metadata in files.")
     parser.add_argument("--multi-user", action="store_true", help="Enables per-user storage.")
+    parser.add_argument("--verbose", action="store_true", help="Enables more debug prints.")
 
     if arg_dict is not None:
         # Parse the provided dictionary of arguments
@@ -140,13 +144,26 @@ def parse_args(arg_dict=None):
     if args.windows_standalone_build:
         args.auto_launch = True
 
+    if args.disable_auto_launch:
+        args.auto_launch = False
+
     args_to_json = vars(args)
     args_to_json["preview_method"] = args_to_json["preview_method"].value
 
     # save args to a json file
     with open(JSON_FILE_PATH, 'w') as f:
         json.dump(args_to_json, f)
-        
+
+    if args.disable_auto_launch:
+        args.auto_launch = False
+
+    import logging
+    logging_level = logging.INFO
+    if args.verbose:
+        logging_level = logging.DEBUG
+
+    logging.basicConfig(format="%(message)s", level=logging_level)
+
     return args
 
 class Arguments:
@@ -196,13 +213,3 @@ class Arguments:
             setattr(self.get_args(), name, value)
 
 args = Arguments()
-
-if args.disable_auto_launch:
-    args.auto_launch = False
-
-import logging
-logging_level = logging.INFO
-if args.verbose:
-    logging_level = logging.DEBUG
-
-logging.basicConfig(format="%(message)s", level=logging_level)
