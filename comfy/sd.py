@@ -610,11 +610,7 @@ def save_checkpoint(output_path, model, clip=None, vae=None, clip_vision=None, m
     model_management.load_models_gpu(load_models)
     clip_vision_sd = clip_vision.get_sd() if clip_vision is not None else None
     sd = model.model.state_dict_for_saving(clip_sd, vae.get_sd(), clip_vision_sd)
-<<<<<<< HEAD
-    comfy.utils.save_torch_file(sd, output_path, metadata=metadata)
-=======
     for k in extra_keys:
         sd[k] = extra_keys[k]
 
     comfy.utils.save_torch_file(sd, output_path, metadata=metadata)
->>>>>>> upstream/master
