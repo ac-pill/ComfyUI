@@ -291,7 +291,7 @@ def main_func(args_dict, cls_pipe_manager=None, cmdline=False):
     # For debugging temp args JSON File
     with open("temp_args.json", 'r') as f:
         tempargs = json.load(f)
-    # print(f'JSON TEMP ARGS:{tempargs}')
+        logger.info(f'JSON TEMP ARGS:{tempargs}')
 
     logger.info(f"Passing pipe_manager with message {cls_pipe_manager.receive_message()}")
 
