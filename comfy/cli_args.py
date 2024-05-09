@@ -83,18 +83,13 @@ def parse_args(arg_dict=None):
     fpvae_group.add_argument("--fp16-vae", action="store_true", help="Run the VAE in fp16, might cause black images.")
     fpvae_group.add_argument("--fp32-vae", action="store_true", help="Run the VAE in full precision fp32.")
     fpvae_group.add_argument("--bf16-vae", action="store_true", help="Run the VAE in bf16.")
-
-<<<<<<< HEAD
     parser.add_argument("--cpu-vae", action="store_true", help="Run the VAE on the CPU.")
-=======
-parser.add_argument("--verbose", action="store_true", help="Enables more debug prints.")
+    parser.add_argument("--verbose", action="store_true", help="Enables more debug prints.")
 
-
-if comfy.options.args_parsing:
-    args = parser.parse_args()
-else:
-    args = parser.parse_args([])
->>>>>>> upstream/master
+    if comfy.options.args_parsing:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args([])
 
     fpte_group = parser.add_mutually_exclusive_group()
     fpte_group.add_argument("--fp8_e4m3fn-text-enc", action="store_true", help="Store text encoder weights in fp8 (e4m3fn variant).")
@@ -201,8 +196,6 @@ class Arguments:
 
 args = Arguments()
 
-<<<<<<< HEAD
-=======
 if args.disable_auto_launch:
     args.auto_launch = False
 
@@ -212,4 +205,3 @@ if args.verbose:
     logging_level = logging.DEBUG
 
 logging.basicConfig(format="%(message)s", level=logging_level)
->>>>>>> upstream/master
