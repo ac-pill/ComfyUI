@@ -38,14 +38,13 @@ def get_input_data(inputs, class_def, unique_id, outputs={}, prompt={}, extra_da
             if h[x] == "PROMPT":
                 input_data_all[x] = [prompt]
             if h[x] == "EXTRA_PNGINFO":
-                if "extra_pnginfo" in extra_data:
-                    input_data_all[x] = [extra_data['extra_pnginfo']]
+                input_data_all[x] = [extra_data.get('extra_pnginfo', None)]
             if h[x] == "UNIQUE_ID":
                 input_data_all[x] = [unique_id]
-            ## GET EXTRA START
+            # GET EXTRA START
             if h[x] == "EXTRA_DATA":
                 input_data_all[x] = [extra_data]
-            ## GET EXTRA END
+            # GET EXTRA END
     return input_data_all
 
 def map_node_over_list(obj, input_data_all, func, allow_interrupt=False):
@@ -184,7 +183,7 @@ def recursive_execute(server, prompt, outputs, current_item, extra_data, execute
         for node_id, node_outputs in outputs.items():
             output_data_formatted[node_id] = [[format_value(x) for x in l] for l in node_outputs]
 
-        logging.error("!!! Exception during processing !!!")
+        logging.error(f"!!! Exception during processing!!! {ex}")
         logging.error(traceback.format_exc())
 
         error_details = {
@@ -201,8 +200,12 @@ def recursive_execute(server, prompt, outputs, current_item, extra_data, execute
 
     return (True, None, None)
 
-def recursive_will_execute(prompt, outputs, current_item):
+def recursive_will_execute(prompt, outputs, current_item, memo={}):
     unique_id = current_item
+
+    if unique_id in memo:
+        return memo[unique_id]
+
     inputs = prompt[unique_id]['inputs']
     will_execute = []
     if unique_id in outputs:
@@ -214,9 +217,10 @@ def recursive_will_execute(prompt, outputs, current_item):
             input_unique_id = input_data[0]
             output_index = input_data[1]
             if input_unique_id not in outputs:
-                will_execute += recursive_will_execute(prompt, outputs, input_unique_id)
+                will_execute += recursive_will_execute(prompt, outputs, input_unique_id, memo)
 
-    return will_execute + [unique_id]
+    memo[unique_id] = will_execute + [unique_id]
+    return memo[unique_id]
 
 def recursive_output_delete_if_changed(prompt, old_prompt, outputs, current_item):
     unique_id = current_item
@@ -371,7 +375,7 @@ class PromptExecutor:
                     d = self.outputs_ui.pop(x)
                     del d
 
-            comfy.model_management.cleanup_models()
+            comfy.model_management.cleanup_models(keep_clone_weights_loaded=True)
             self.add_message("execution_cached",
                           { "nodes": list(current_outputs) , "prompt_id": prompt_id},
                           broadcast=False)
@@ -384,7 +388,8 @@ class PromptExecutor:
 
             while len(to_execute) > 0:
                 #always execute the output that depends on the least amount of unexecuted nodes first
-                to_execute = sorted(list(map(lambda a: (len(recursive_will_execute(prompt, self.outputs, a[-1])), a[-1]), to_execute)))
+                memo = {}
+                to_execute = sorted(list(map(lambda a: (len(recursive_will_execute(prompt, self.outputs, a[-1], memo)), a[-1]), to_execute)))
                 output_node_id = to_execute.pop(0)[-1]
 
                 # This call shouldn't raise anything if there's an error deep in

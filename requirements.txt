@@ -11,3 +11,4 @@ scipy
 tqdm
 psutil
 boto3
+kornia>=0.7.1

@@ -54,6 +54,8 @@ def parse_args(arg_dict=None):
 
     parser.add_argument("--listen", type=str, default="127.0.0.1", metavar="IP", nargs="?", const="0.0.0.0", help="Specify the IP address to listen on (default: 127.0.0.1). If --listen is provided without an argument, it defaults to 0.0.0.0. (listens on all)")
     parser.add_argument("--port", type=int, default=8188, help="Set the listen port.")
+    parser.add_argument("--tls-keyfile", type=str, help="Path to TLS (SSL) key file. Enables TLS, makes app accessible at https://... requires --tls-certfile to function")
+    parser.add_argument("--tls-certfile", type=str, help="Path to TLS (SSL) certificate file. Enables TLS, makes app accessible at https://... requires --tls-keyfile to function")
     parser.add_argument("--enable-cors-header", type=str, default=None, metavar="ORIGIN", nargs="?", const="*", help="Enable CORS (Cross-Origin Resource Sharing) with optional origin or allow all with default '*'.")
     parser.add_argument("--max-upload-size", type=float, default=100, help="Set the maximum upload size in MB.")
     parser.add_argument("--extra-model-paths-config", type=str, default=None, metavar="PATH", nargs='+', action='append', help="Load one or more extra_model_paths.yaml files.")
@@ -85,6 +87,13 @@ def parse_args(arg_dict=None):
     fpvae_group.add_argument("--bf16-vae", action="store_true", help="Run the VAE in bf16.")
 
     parser.add_argument("--cpu-vae", action="store_true", help="Run the VAE on the CPU.")
+    parser.add_argument("--verbose", action="store_true", help="Enables more debug prints.")
+
+
+    # if comfy.options.args_parsing:
+    #     args = parser.parse_args()
+    # else:
+    #     args = parser.parse_args([])
 
     fpte_group = parser.add_mutually_exclusive_group()
     fpte_group.add_argument("--fp8_e4m3fn-text-enc", action="store_true", help="Store text encoder weights in fp8 (e4m3fn variant).")
@@ -112,7 +121,6 @@ def parse_args(arg_dict=None):
     vram_group.add_argument("--lowvram", action="store_true", help="Split the unet in parts to use less vram.")
     vram_group.add_argument("--novram", action="store_true", help="When lowvram isn't enough.")
     vram_group.add_argument("--cpu", action="store_true", help="To use the CPU for everything (slow).")
-    
 
     parser.add_argument("--disable-smart-memory", action="store_true", help="Force ComfyUI to agressively offload to regular ram instead of keeping models in vram when it can.")
     parser.add_argument("--deterministic", action="store_true", help="Make pytorch use slower deterministic algorithms when it can. Note that this might not make images deterministic in all cases.")
@@ -134,13 +142,26 @@ def parse_args(arg_dict=None):
     if args.windows_standalone_build:
         args.auto_launch = True
 
+    if args.disable_auto_launch:
+        args.auto_launch = False
+
     args_to_json = vars(args)
     args_to_json["preview_method"] = args_to_json["preview_method"].value
 
     # save args to a json file
     with open(JSON_FILE_PATH, 'w') as f:
         json.dump(args_to_json, f)
-        
+
+    if args.disable_auto_launch:
+        args.auto_launch = False
+
+    import logging
+    logging_level = logging.INFO
+    if args.verbose:
+        logging_level = logging.DEBUG
+
+    logging.basicConfig(format="%(message)s", level=logging_level)
+
     return args
 
 class Arguments:
@@ -190,4 +211,3 @@ class Arguments:
             setattr(self.get_args(), name, value)
 
 args = Arguments()
-
