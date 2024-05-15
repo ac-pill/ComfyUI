@@ -299,11 +299,11 @@ def main_func(args_dict, cls_pipe_manager=None, cmdline=False):
 
     call_on_start = None
     if args.auto_launch:
-        def startup_server(address, port):
+        def startup_server(scheme, address, port):
             import webbrowser
             if os.name == 'nt' and address == '0.0.0.0':
                 address = '127.0.0.1'
-            webbrowser.open(f"http://{address}:{port}")
+            webbrowser.open(f"{scheme}://{address}:{port}")
         call_on_start = startup_server
 
     if cmdline:
