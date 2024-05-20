@@ -578,11 +578,13 @@ class PromptServer():
 
             else:
                 ## Edit on Block handling invalid prompts
+                user_id = None # Need to assign a value in case of error
+                channel_id = None # Need to assign a value in case of error
                 message = ({"error": "no prompt", "node_errors": []})
                 bot_message = {
                     "prompt_id": "None",
-                    "user_id": user_id,
-                    "channel_id": channel_id,
+                    "user_id": user_id, 
+                    "channel_id": channel_id, 
                     "message": message
                 }
                 logger.error(f'BOT MESSAGE: {bot_message}')
